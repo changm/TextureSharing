@@ -17,8 +17,13 @@ private:
 	void InitBackBuffer();
 	void InitViewport();
 
-	// draw all the things!
+	// draw a clear color.
 	void ClearRect(FLOAT* aRGBAColor);
+
+	// Let's use some shaders now
+	void CompileShaders();
+	ID3D11VertexShader* mVertexShader;
+	ID3D11PixelShader* mPixelShader;
 
 	// Setup D3D
 	IDXGIFactory1* mFactory;

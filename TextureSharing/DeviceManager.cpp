@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <d3d11.h>
 #include <d2d1.h>
+#include <d3dcompiler.h>
 
 DeviceManager::DeviceManager(HWND aOutputWindow)
 	: mOutputWindow(aOutputWindow)
@@ -30,6 +31,38 @@ void DeviceManager::Init()
 	InitD2D();
 	InitBackBuffer();
 	InitViewport();
+
+	CompileShaders();
+}
+
+void DeviceManager::CompileShaders()
+{
+	HRESULT result;
+	ID3D10Blob* vertexShader;
+	ID3D10Blob* pixelShader;
+
+	// Compile our shaders
+	result = D3DCompileFromFile(L"VertexShader.hlsl", NULL, NULL,
+								"VertexShaderMain", "vs_5_0", 0, 0,
+								&vertexShader, NULL);
+	assert(SUCCESS(result));
+
+	result = D3DCompileFromFile(L"PixelShader.hlsl", NULL, NULL,
+								"main", "ps_5_0", 0, 0,
+								&pixelShader, NULL);
+	assert(SUCCESS(result));
+	assert(mDevice);
+
+	// Create the pixel shaders from the bytecode
+	result = mDevice->CreatePixelShader(pixelShader->GetBufferPointer(), pixelShader->GetBufferSize(), NULL, &mPixelShader);
+	assert(SUCCESS(result));
+
+	mDevice->CreateVertexShader(vertexShader->GetBufferPointer(), vertexShader->GetBufferSize(), NULL, &mVertexShader);
+	assert(SUCCESS(result));
+
+	// Finally set them as our default pixel shaders
+	mContext->VSSetShader(mVertexShader, 0, 0);
+	mContext->PSSetShader(mPixelShader, 0, 0);
 }
 
 // A color here should be a RGBA float
