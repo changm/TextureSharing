@@ -12,6 +12,14 @@ DeviceManager::DeviceManager(HWND aOutputWindow)
 	Init();
 }
 
+DeviceManager::~DeviceManager()
+{
+	mSwapChain->Release();
+	mBackBuffer->Release();
+	mDevice->Release();
+	mContext->Release();
+}
+
 bool SUCCESS(HRESULT aResult) {
 	return aResult == S_OK;
 }
@@ -20,6 +28,43 @@ void DeviceManager::Init()
 {
 	InitD3D();
 	InitD2D();
+	InitBackBuffer();
+	InitViewport();
+}
+
+// A color here should be a RGBA float
+void DeviceManager::ClearRect(FLOAT* aRGBAColor)
+{
+	mContext->ClearRenderTargetView(mBackBuffer, aRGBAColor);
+}
+
+void DeviceManager::InitViewport()
+{
+	// D3d goes from -1, 1 and that maps to device space via the viewport.
+	D3D11_VIEWPORT viewport;
+	memset(&viewport, 0, sizeof(D3D11_VIEWPORT));
+	viewport.Height = 1024;
+	viewport.Width = 1024;
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+
+	mContext->RSSetViewports(1, &viewport);
+}
+
+void DeviceManager::InitBackBuffer()
+{
+	assert(mSwapChain);
+	ID3D11Texture2D* backBufferInfo;
+	// Query information about the back buffer, don't actually use anything.
+	HRESULT hr = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBufferInfo);
+	assert(SUCCESS(hr));
+
+	hr = mDevice->CreateRenderTargetView(backBufferInfo, NULL, &mBackBuffer);
+	assert(SUCCESS(hr));
+	// sadly we only need the information to create the render target view
+	backBufferInfo->Release();
+
+	mContext->OMSetRenderTargets(1, &mBackBuffer, NULL);
 }
 
 void DeviceManager::InitD3D()
@@ -75,5 +120,12 @@ void DeviceManager::InitD2D()
 void DeviceManager::Draw()
 {
 	printf("DeviceManager::Draw");
-	mContext->
+	FLOAT red[4];
+	red[0] = 255;
+	red[1] = 0;
+	red[2] = 0;
+	red[3] = 0;
+	ClearRect(red);
+
+	mSwapChain->Present(0, 0);
 }

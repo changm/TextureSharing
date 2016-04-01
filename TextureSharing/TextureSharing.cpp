@@ -57,6 +57,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_ int       nCmdShow)
 {
 	InitConsole();
+	printf("Starting console\n");
 
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
@@ -66,6 +67,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	assert(globalOutputWindow);
 	DeviceManager deviceManager(globalOutputWindow);
 	globalDeviceManager = &deviceManager;
+
+	UpdateWindow(globalOutputWindow);
 
     MSG msg;
     // Main message loop:
@@ -128,8 +131,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    }
 
    ShowWindow(globalOutputWindow, nCmdShow);
-   UpdateWindow(globalOutputWindow);
-
    return TRUE;
 }
 

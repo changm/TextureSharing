@@ -7,11 +7,18 @@ class DeviceManager {
 public:
 	DeviceManager(HWND aHDC);
 	void Draw();
+	~DeviceManager();
 
 private:
+	// Init all the things
 	void Init();
 	void InitD3D();
 	void InitD2D();
+	void InitBackBuffer();
+	void InitViewport();
+
+	// draw all the things!
+	void ClearRect(FLOAT* aRGBAColor);
 
 	// Setup D3D
 	IDXGIFactory1* mFactory;
@@ -23,5 +30,9 @@ private:
 
 	// Now we can setup D2D
 	ID2D1Factory* mD2DFactory;
+
+	// Stuff we're actually rendering to
+	// A render target is just a wrapper around the back buffer!
+	ID3D11RenderTargetView* mBackBuffer;
 
 };
