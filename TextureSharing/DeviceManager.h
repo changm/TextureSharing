@@ -19,11 +19,15 @@ private:
 
 	// draw a clear color.
 	void ClearRect(FLOAT* aRGBAColor);
+	void DrawTriangle();
 
 	// Let's use some shaders now
 	void CompileShaders();
 	ID3D11VertexShader* mVertexShader;
 	ID3D11PixelShader* mPixelShader;
+
+	ID3D10Blob* mVertexShaderBytecode;
+	ID3D10Blob* mPixelShaderBytecode;
 
 	// Setup D3D
 	IDXGIFactory1* mFactory;

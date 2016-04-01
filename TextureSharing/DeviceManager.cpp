@@ -7,6 +7,17 @@
 #include <d2d1.h>
 #include <d3dcompiler.h>
 
+#include "Vertex.h"
+
+// Since the incoming numbers are FLOATS, the values are actually 0-1, not 0-255
+static void InitColor(FLOAT* aFloatOut, FLOAT r, FLOAT g, FLOAT b, FLOAT a)
+{
+	aFloatOut[0] = r;
+	aFloatOut[1] = g;
+	aFloatOut[2] = b;
+	aFloatOut[3] = a;
+}
+
 DeviceManager::DeviceManager(HWND aOutputWindow)
 	: mOutputWindow(aOutputWindow)
 {
@@ -15,6 +26,8 @@ DeviceManager::DeviceManager(HWND aOutputWindow)
 
 DeviceManager::~DeviceManager()
 {
+	mVertexShader->Release();
+	mPixelShader->Release();
 	mSwapChain->Release();
 	mBackBuffer->Release();
 	mDevice->Release();
@@ -38,26 +51,24 @@ void DeviceManager::Init()
 void DeviceManager::CompileShaders()
 {
 	HRESULT result;
-	ID3D10Blob* vertexShader;
-	ID3D10Blob* pixelShader;
 
 	// Compile our shaders
 	result = D3DCompileFromFile(L"VertexShader.hlsl", NULL, NULL,
 								"VertexShaderMain", "vs_5_0", 0, 0,
-								&vertexShader, NULL);
+								&mVertexShaderBytecode, NULL);
 	assert(SUCCESS(result));
 
 	result = D3DCompileFromFile(L"PixelShader.hlsl", NULL, NULL,
 								"main", "ps_5_0", 0, 0,
-								&pixelShader, NULL);
+								&mPixelShaderBytecode, NULL);
 	assert(SUCCESS(result));
 	assert(mDevice);
 
 	// Create the pixel shaders from the bytecode
-	result = mDevice->CreatePixelShader(pixelShader->GetBufferPointer(), pixelShader->GetBufferSize(), NULL, &mPixelShader);
+	result = mDevice->CreatePixelShader(mPixelShaderBytecode->GetBufferPointer(), mPixelShaderBytecode->GetBufferSize(), NULL, &mPixelShader);
 	assert(SUCCESS(result));
 
-	mDevice->CreateVertexShader(vertexShader->GetBufferPointer(), vertexShader->GetBufferSize(), NULL, &mVertexShader);
+	mDevice->CreateVertexShader(mVertexShaderBytecode->GetBufferPointer(), mVertexShaderBytecode->GetBufferSize(), NULL, &mVertexShader);
 	assert(SUCCESS(result));
 
 	// Finally set them as our default pixel shaders
@@ -150,15 +161,73 @@ void DeviceManager::InitD2D()
 	assert(SUCCESS(hr));
 }
 
+void DeviceManager::DrawTriangle()
+{
+	float white[4] = { 1, 1, 1, 1 };
+	Vertex vertices[] =
+	{
+		{0, 0, 0, white},	// Origin
+		{0, 1, 0, white},	// top
+		{1, 0, 0, white},	// right
+	};
+
+	// Now we create a buffer for our triangle
+	ID3D11Buffer* triangleBuffer;
+	D3D11_BUFFER_DESC bufferDesc;
+	memset(&bufferDesc, 0, sizeof(bufferDesc));
+
+	bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	bufferDesc.ByteWidth = sizeof(Vertex) * 3;	// Because we have 3 vertices
+	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	HRESULT result = mDevice->CreateBuffer(&bufferDesc, NULL, &triangleBuffer);
+	assert(SUCCESS(result));
+
+	// We now have a GPU buffer, and our vertices are on the CPU
+	// Mapping allows us to communicate with the GPU
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	mContext->Map(triangleBuffer, NULL, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	memcpy(mappedResource.pData, vertices, sizeof(vertices));
+	mContext->Unmap(triangleBuffer, NULL);
+
+	// Time to create the input buffer things
+	D3D11_INPUT_ELEMENT_DESC inputDesc[] =
+	{
+		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		// 12 since we have 3 floats bfeore the color
+		{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+	};
+
+	ID3D11InputLayout* inputLayout;
+	result = mDevice->CreateInputLayout(inputDesc, 2,
+		mVertexShaderBytecode->GetBufferPointer(),
+		mVertexShaderBytecode->GetBufferSize(),
+		&inputLayout);
+	assert(SUCCESS(result));
+	mContext->IASetInputLayout(inputLayout);
+
+	// Finally draw the things, set the vertex buffers to the one that we uploaded to the gpu
+	UINT stride = sizeof(Vertex);
+	UINT offset = 0;
+	mContext->IAGetVertexBuffers(0, 1, &triangleBuffer, &stride, &offset);
+	
+	// Tell the GPU we just have a list of triangles
+	mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// Finally draw the 3 vertices we have
+	int vertexCount = 3;
+	mContext->Draw(vertexCount, 0);
+
+}
+
 void DeviceManager::Draw()
 {
 	printf("DeviceManager::Draw");
-	FLOAT red[4];
-	red[0] = 255;
-	red[1] = 0;
-	red[2] = 0;
-	red[3] = 0;
-	ClearRect(red);
+	DrawTriangle();
+	//FLOAT red[4];
+	//InitColor(red, 0, 1, 0, 0);
+	//ClearRect(red);
 
 	mSwapChain->Present(0, 0);
 }
