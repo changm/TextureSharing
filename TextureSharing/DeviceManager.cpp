@@ -8,6 +8,9 @@
 #include <d3dcompiler.h>
 
 #include "Vertex.h"
+#include <DirectXMath.h>
+
+using namespace DirectX;
 
 // Since the incoming numbers are FLOATS, the values are actually 0-1, not 0-255
 static void InitColor(FLOAT* aFloatOut, FLOAT r, FLOAT g, FLOAT b, FLOAT a)
@@ -46,6 +49,8 @@ void DeviceManager::Init()
 	InitViewport();
 
 	CompileShaders();
+	InitMatrices();
+	UpdateConstantBuffers();
 }
 
 void DeviceManager::CompileShaders()
@@ -54,7 +59,7 @@ void DeviceManager::CompileShaders()
 
 	// Compile our shaders
 	result = D3DCompileFromFile(L"VertexShader.hlsl", NULL, NULL,
-								"VertexShaderMain", "vs_5_0", 0, 0,
+								"main", "vs_5_0", 0, 0,
 								&mVertexShaderBytecode, NULL);
 	assert(SUCCESS(result));
 
@@ -84,11 +89,17 @@ void DeviceManager::ClearRect(FLOAT* aRGBAColor)
 
 void DeviceManager::InitViewport()
 {
+	RECT clientRect;
+	GetClientRect(mOutputWindow, &clientRect);
+
+	float clientWidth = clientRect.right - clientRect.left;
+	float clientHeight = clientRect.bottom - clientRect.top;
+
 	// D3d goes from -1, 1 and that maps to device space via the viewport.
 	D3D11_VIEWPORT viewport;
 	memset(&viewport, 0, sizeof(D3D11_VIEWPORT));
-	viewport.Height = 1024;
-	viewport.Width = 1024;
+	viewport.Height = clientWidth;
+	viewport.Width = clientHeight;
 	viewport.TopLeftX = 0;
 	viewport.TopLeftY = 0;
 
@@ -161,14 +172,19 @@ void DeviceManager::InitD2D()
 	assert(SUCCESS(hr));
 }
 
+struct VertexData
+{
+	XMFLOAT3 Position;
+	XMFLOAT3 Color;
+};
+
 void DeviceManager::DrawTriangle()
 {
-	float white[4] = { 1, 1, 1, 1 };
-	Vertex vertices[] =
+	VertexData vertices[] =
 	{
-		{0, 0, 0, white},	// Origin
-		{0, 1, 0, white},	// top
-		{1, 0, 0, white},	// right
+		{ XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1) }, // origin
+		{ XMFLOAT3(0, 1, 0), XMFLOAT3(1, 1, 1) }, // y
+		{ XMFLOAT3(1, 1, 0), XMFLOAT3(1, 1, 1) },
 	};
 
 	// Now we create a buffer for our triangle
@@ -177,7 +193,7 @@ void DeviceManager::DrawTriangle()
 	memset(&bufferDesc, 0, sizeof(bufferDesc));
 
 	bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	bufferDesc.ByteWidth = sizeof(Vertex) * 3;	// Because we have 3 vertices
+	bufferDesc.ByteWidth = sizeof(VertexData) * 3;	// Because we have 3 vertices
 	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
@@ -196,7 +212,7 @@ void DeviceManager::DrawTriangle()
 	{
 		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		// 12 since we have 3 floats bfeore the color
-		{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+		{"COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(VertexData, Color), D3D11_INPUT_PER_VERTEX_DATA, 0}
 	};
 
 	ID3D11InputLayout* inputLayout;
@@ -210,7 +226,7 @@ void DeviceManager::DrawTriangle()
 	// Finally draw the things, set the vertex buffers to the one that we uploaded to the gpu
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
-	mContext->IAGetVertexBuffers(0, 1, &triangleBuffer, &stride, &offset);
+	mContext->IASetVertexBuffers(0, 1, &triangleBuffer, &stride, &offset);
 	
 	// Tell the GPU we just have a list of triangles
 	mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -218,16 +234,57 @@ void DeviceManager::DrawTriangle()
 	// Finally draw the 3 vertices we have
 	int vertexCount = 3;
 	mContext->Draw(vertexCount, 0);
+}
 
+void DeviceManager::InitMatrices()
+{
+	mWorldMatrix = XMMatrixIdentity();
+
+	// view matrix is basically telling the camera where to look
+	XMVECTOR eyePosition = XMVectorSet(0, 0, -5, 1); // look -5 away for the camera
+	XMVECTOR focusPoint = XMVectorSet(0, 0, 0, 1);	// Look at the origin
+	XMVECTOR upDirection = XMVectorSet(0, 1, 0, 0);	// Set up to the the Y axis, notice W is 0 here.
+	mViewMatrix = XMMatrixLookAtLH(eyePosition, focusPoint, upDirection);
+
+	// Projection matrix takes things in the -1..1 space and puts it onto the viewport
+
+	RECT clientRect;
+	GetClientRect(mOutputWindow, &clientRect);
+
+	// Compute the exact client dimensions. This will be used
+	// to initialize the render targets for our swap chain.
+	float clientWidth = clientRect.right - clientRect.left;
+	float clientHeight = clientRect.bottom - clientRect.top;
+	mProjectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(90.0f), clientWidth / clientHeight, 0.1f, 100.0f);
+}
+
+void DeviceManager::UpdateConstantBuffers()
+{
+	D3D11_BUFFER_DESC constantBufferDesc;
+	memset(&constantBufferDesc, 0, sizeof(D3D11_BUFFER_DESC));
+
+	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	constantBufferDesc.ByteWidth = sizeof(XMMATRIX);
+	constantBufferDesc.CPUAccessFlags = 0;
+	constantBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+
+	HRESULT hr = mDevice->CreateBuffer(&constantBufferDesc, nullptr, &mConstantBuffers[ConstantBuffers::WORLD]);
+	assert(SUCCESS(hr));
+
+	hr = mDevice->CreateBuffer(&constantBufferDesc, nullptr, &mConstantBuffers[ConstantBuffers::PROJECTION]);
+	assert(SUCCESS(hr));
+
+	hr = mDevice->CreateBuffer(&constantBufferDesc, nullptr, &mConstantBuffers[ConstantBuffers::VIEW]);
+	assert(SUCCESS(hr));
+
+	mContext->UpdateSubresource(mConstantBuffers[ConstantBuffers::PROJECTION], 0, nullptr, &mProjectionMatrix, 0, 0);
+	mContext->UpdateSubresource(mConstantBuffers[ConstantBuffers::VIEW], 0, nullptr, &mViewMatrix, 0, 0);
+	mContext->UpdateSubresource(mConstantBuffers[ConstantBuffers::WORLD], 0, nullptr, &mWorldMatrix, 0, 0);
+	mContext->VSSetConstantBuffers(0, ConstantBuffers::NUM_BUFFERS, mConstantBuffers);
 }
 
 void DeviceManager::Draw()
 {
-	printf("DeviceManager::Draw");
 	DrawTriangle();
-	//FLOAT red[4];
-	//InitColor(red, 0, 1, 0, 0);
-	//ClearRect(red);
-
 	mSwapChain->Present(0, 0);
 }

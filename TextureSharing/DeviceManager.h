@@ -1,6 +1,16 @@
 #pragma once
 #include <d3d11.h>
 #include <d2d1.h>
+#include <DirectXMath.h>
+
+using namespace DirectX;
+
+enum ConstantBuffers {
+	WORLD,
+	PROJECTION,
+	VIEW,
+	NUM_BUFFERS
+};
 
 // Manages our d3d devices for us
 class DeviceManager {
@@ -16,6 +26,8 @@ private:
 	void InitD2D();
 	void InitBackBuffer();
 	void InitViewport();
+	void UpdateConstantBuffers();
+	void InitMatrices();
 
 	// draw a clear color.
 	void ClearRect(FLOAT* aRGBAColor);
@@ -44,4 +56,9 @@ private:
 	// A render target is just a wrapper around the back buffer!
 	ID3D11RenderTargetView* mBackBuffer;
 
+	ID3D11Buffer* mConstantBuffers[ConstantBuffers::NUM_BUFFERS];
+
+	XMMATRIX mProjectionMatrix;
+	XMMATRIX mViewMatrix;
+	XMMATRIX mWorldMatrix;
 };
