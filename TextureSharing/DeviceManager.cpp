@@ -47,10 +47,10 @@ void DeviceManager::Init()
 	InitD2D();
 	InitBackBuffer();
 	InitViewport();
-
-	CompileShaders();
 	InitMatrices();
 	UpdateConstantBuffers();
+
+	CompileShaders();
 }
 
 void DeviceManager::CompileShaders()
@@ -98,8 +98,8 @@ void DeviceManager::InitViewport()
 	// D3d goes from -1, 1 and that maps to device space via the viewport.
 	D3D11_VIEWPORT viewport;
 	memset(&viewport, 0, sizeof(D3D11_VIEWPORT));
-	viewport.Height = clientWidth;
-	viewport.Width = clientHeight;
+	viewport.Height = clientHeight;
+	viewport.Width = clientWidth;
 	viewport.TopLeftX = 0;
 	viewport.TopLeftY = 0;
 
@@ -142,14 +142,21 @@ void DeviceManager::InitD3D()
 		NULL, &mContext);
 	assert(SUCCESS(hr));
 
+
+	RECT clientRect;
+	GetClientRect(mOutputWindow, &clientRect);
+
+	// Compute the exact client dimensions. This will be used
+	// to initialize the render targets for our swap chain.
+	unsigned int clientWidth = clientRect.right - clientRect.left;
+	unsigned int clientHeight = clientRect.bottom - clientRect.top;
+
 	// Create the swap chain
 	DXGI_SWAP_CHAIN_DESC swapDesc;
 	memset(&swapDesc, 0, sizeof(DXGI_SWAP_CHAIN_DESC));
-	swapDesc.BufferDesc.Width = 0;
-	swapDesc.BufferDesc.Height = 0;
+	swapDesc.BufferDesc.Width = clientWidth;
+	swapDesc.BufferDesc.Height = clientHeight;
 	swapDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	swapDesc.BufferDesc.RefreshRate.Numerator = 60;
-	swapDesc.BufferDesc.RefreshRate.Denominator = 1;
 	swapDesc.SampleDesc.Count = 1;
 	swapDesc.SampleDesc.Quality = 0;
 	swapDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -172,7 +179,7 @@ void DeviceManager::InitD2D()
 	assert(SUCCESS(hr));
 }
 
-struct VertexData
+struct VertexPosColor
 {
 	XMFLOAT3 Position;
 	XMFLOAT3 Color;
@@ -180,7 +187,7 @@ struct VertexData
 
 void DeviceManager::DrawTriangle()
 {
-	VertexData vertices[] =
+	VertexPosColor vertices[] =
 	{
 		{ XMFLOAT3(-1, -1, 0), XMFLOAT3(1, 1, 1) }, // origin
 		{ XMFLOAT3(-1, 1, 0), XMFLOAT3(1, 1, 1) }, // y
@@ -193,7 +200,7 @@ void DeviceManager::DrawTriangle()
 	memset(&bufferDesc, 0, sizeof(bufferDesc));
 
 	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	bufferDesc.ByteWidth = sizeof(VertexData) * _countof(vertices);	// Because we have 3 vertices
+	bufferDesc.ByteWidth = sizeof(VertexPosColor) * _countof(vertices);	// Because we have 3 vertices
 	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bufferDesc.CPUAccessFlags = 0;
 
@@ -208,9 +215,9 @@ void DeviceManager::DrawTriangle()
 	// Time to create the input buffer things
 	D3D11_INPUT_ELEMENT_DESC inputDesc[] =
 	{
-		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		// 12 since we have 3 floats bfeore the color
-		{"COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(VertexData, Color), D3D11_INPUT_PER_VERTEX_DATA, 0}
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(VertexPosColor, Color), D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 
 	ID3D11InputLayout* inputLayout;
@@ -222,10 +229,10 @@ void DeviceManager::DrawTriangle()
 	mContext->IASetInputLayout(inputLayout);
 
 	// Finally draw the things, set the vertex buffers to the one that we uploaded to the gpu
-	UINT stride = sizeof(VertexData);
+	UINT stride = sizeof(VertexPosColor);
 	UINT offset = 0;
 	mContext->IASetVertexBuffers(0, 1, &triangleBuffer, &stride, &offset);
-	
+
 	// Tell the GPU we just have a list of triangles
 	mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 

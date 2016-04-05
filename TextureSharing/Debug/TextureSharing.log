@@ -2,6 +2,6 @@
   DeviceManager.cpp
 f:\projects\texturesharing\texturesharing\devicemanager.cpp(95): warning C4244: 'initializing': conversion from 'LONG' to 'float', possible loss of data
 f:\projects\texturesharing\texturesharing\devicemanager.cpp(96): warning C4244: 'initializing': conversion from 'LONG' to 'float', possible loss of data
-f:\projects\texturesharing\texturesharing\devicemanager.cpp(254): warning C4244: 'initializing': conversion from 'LONG' to 'float', possible loss of data
-f:\projects\texturesharing\texturesharing\devicemanager.cpp(255): warning C4244: 'initializing': conversion from 'LONG' to 'float', possible loss of data
+f:\projects\texturesharing\texturesharing\devicemanager.cpp(261): warning C4244: 'initializing': conversion from 'LONG' to 'float', possible loss of data
+f:\projects\texturesharing\texturesharing\devicemanager.cpp(262): warning C4244: 'initializing': conversion from 'LONG' to 'float', possible loss of data
   TextureSharing.vcxproj -> F:\Projects\TextureSharing\Debug\TextureSharingTest.exe
