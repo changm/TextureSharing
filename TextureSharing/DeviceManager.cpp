@@ -182,8 +182,8 @@ void DeviceManager::DrawTriangle()
 {
 	VertexData vertices[] =
 	{
-		{ XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1) }, // origin
-		{ XMFLOAT3(0, 1, 0), XMFLOAT3(1, 1, 1) }, // y
+		{ XMFLOAT3(-1, -1, 0), XMFLOAT3(1, 1, 1) }, // origin
+		{ XMFLOAT3(-1, 1, 0), XMFLOAT3(1, 1, 1) }, // y
 		{ XMFLOAT3(1, 1, 0), XMFLOAT3(1, 1, 1) },
 	};
 
@@ -192,20 +192,18 @@ void DeviceManager::DrawTriangle()
 	D3D11_BUFFER_DESC bufferDesc;
 	memset(&bufferDesc, 0, sizeof(bufferDesc));
 
-	bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	bufferDesc.ByteWidth = sizeof(VertexData) * 3;	// Because we have 3 vertices
+	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	bufferDesc.ByteWidth = sizeof(VertexData) * _countof(vertices);	// Because we have 3 vertices
 	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	bufferDesc.CPUAccessFlags = 0;
 
-	HRESULT result = mDevice->CreateBuffer(&bufferDesc, NULL, &triangleBuffer);
+	D3D11_SUBRESOURCE_DATA resourceData;
+	memset(&resourceData, 0, sizeof(D3D11_SUBRESOURCE_DATA));
+	resourceData.pSysMem = vertices;
+
+	// This uploads the data to the gpu
+	HRESULT result = mDevice->CreateBuffer(&bufferDesc, &resourceData, &triangleBuffer);
 	assert(SUCCESS(result));
-
-	// We now have a GPU buffer, and our vertices are on the CPU
-	// Mapping allows us to communicate with the GPU
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	mContext->Map(triangleBuffer, NULL, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	memcpy(mappedResource.pData, vertices, sizeof(vertices));
-	mContext->Unmap(triangleBuffer, NULL);
 
 	// Time to create the input buffer things
 	D3D11_INPUT_ELEMENT_DESC inputDesc[] =
@@ -224,7 +222,7 @@ void DeviceManager::DrawTriangle()
 	mContext->IASetInputLayout(inputLayout);
 
 	// Finally draw the things, set the vertex buffers to the one that we uploaded to the gpu
-	UINT stride = sizeof(Vertex);
+	UINT stride = sizeof(VertexData);
 	UINT offset = 0;
 	mContext->IASetVertexBuffers(0, 1, &triangleBuffer, &stride, &offset);
 	
