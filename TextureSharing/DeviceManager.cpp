@@ -9,6 +9,7 @@
 
 #include "Vertex.h"
 #include <DirectXMath.h>
+#include "Texture.h"
 
 using namespace DirectX;
 
@@ -290,6 +291,9 @@ void DeviceManager::UpdateConstantBuffers()
 
 void DeviceManager::Draw()
 {
+	Texture testTexture(mDevice);
+	testTexture.Allocate();
+
 	DrawTriangle();
 	mSwapChain->Present(0, 0);
 }

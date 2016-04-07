@@ -70,17 +70,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	UpdateWindow(globalOutputWindow);
 
-    MSG msg;
-    // Main message loop:
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
-        if (!TranslateAccelerator(msg.hwnd, keyBindings, &msg)) {
-            TranslateMessage(&msg);
+	MSG msg;
+	// Main message loop:
+	while (GetMessage(&msg, nullptr, 0, 0)) {
+	if (!TranslateAccelerator(msg.hwnd, keyBindings, &msg)) {
+			TranslateMessage(&msg);
 			DispatchMessage(&msg);
-        }
-    }
+		}
+	}
 
-    return (int) msg.wParam;
+	return (int) msg.wParam;
 }
 
 //
@@ -88,8 +87,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 //
 //  PURPOSE: Registers the window class.
 //
-ATOM MyRegisterClass(HINSTANCE hInstance)
-{
+ATOM MyRegisterClass(HINSTANCE hInstance) {
     WNDCLASSEXW wcex;
 
     wcex.cbSize = sizeof(WNDCLASSEX);
@@ -135,7 +133,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 }
 
 void PaintOurContent(HDC aHDC, PAINTSTRUCT& aPS) {
-	printf("Paint our things here");
 	globalDeviceManager->Draw();
 }
 
