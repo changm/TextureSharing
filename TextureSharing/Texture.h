@@ -5,18 +5,29 @@
 class Texture
 {
 public:
-	Texture(ID3D11Device* aDevice);
+	Texture(ID3D11Device* aDevice, ID3D11DeviceContext* aDeviceContext);
 	~Texture();
 
-	void Allocate();
+	void AllocateTexture();
 	void Deallocate();
 	ID3D11Texture2D* GetTexture() {
 		return mTexture;
 	}
 
+	ID3D11RenderTargetView* GetRenderTargetView() {
+		return mTextureRenderTarget;
+	}
+
 private:
+	void InitTextureRenderTarget();
+	void InitShaderResourceView();
+
+	ID3D11DeviceContext* mContext;
 	ID3D11Device* mDevice;
 	ID3D11Texture2D* mTexture;
-	const int mWidth = 1024;
-	const int mHeight = 1024;
+	ID3D11RenderTargetView* mTextureRenderTarget;
+	ID3D11ShaderResourceView* mShaderResourceView; // who knows yet
+
+	int mWidth;
+	int mHeight;
 };

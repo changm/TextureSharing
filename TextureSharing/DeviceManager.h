@@ -5,6 +5,8 @@
 
 using namespace DirectX;
 
+class Texture;
+
 enum ConstantBuffers {
 	WORLD,
 	PROJECTION,
@@ -24,10 +26,13 @@ private:
 	void Init();
 	void InitD3D();
 	void InitD2D();
+	void SetRenderTarget();
 	void InitBackBuffer();
+	void InitTexture();
 	void InitViewport();
 	void UpdateConstantBuffers();
 	void InitMatrices();
+	void CopyToBackBuffer();
 
 	// draw a clear color.
 	void ClearRect(FLOAT* aRGBAColor);
@@ -55,10 +60,14 @@ private:
 	// Stuff we're actually rendering to
 	// A render target is just a wrapper around the back buffer!
 	ID3D11RenderTargetView* mBackBuffer;
+	Texture* mTexture;
 
 	ID3D11Buffer* mConstantBuffers[ConstantBuffers::NUM_BUFFERS];
 
 	XMMATRIX mProjectionMatrix;
 	XMMATRIX mViewMatrix;
 	XMMATRIX mWorldMatrix;
+
+	LONG mWidth;
+	LONG mHeight;
 };

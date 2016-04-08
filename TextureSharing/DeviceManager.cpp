@@ -36,6 +36,7 @@ DeviceManager::~DeviceManager()
 	mBackBuffer->Release();
 	mDevice->Release();
 	mContext->Release();
+	delete mTexture;
 }
 
 bool SUCCESS(HRESULT aResult) {
@@ -46,8 +47,12 @@ void DeviceManager::Init()
 {
 	InitD3D();
 	InitD2D();
-	InitBackBuffer();
 	InitViewport();
+
+	InitBackBuffer();
+	InitTexture();
+	SetRenderTarget();
+	
 	InitMatrices();
 	UpdateConstantBuffers();
 
@@ -90,21 +95,31 @@ void DeviceManager::ClearRect(FLOAT* aRGBAColor)
 
 void DeviceManager::InitViewport()
 {
-	RECT clientRect;
-	GetClientRect(mOutputWindow, &clientRect);
-
-	float clientWidth = clientRect.right - clientRect.left;
-	float clientHeight = clientRect.bottom - clientRect.top;
-
 	// D3d goes from -1, 1 and that maps to device space via the viewport.
 	D3D11_VIEWPORT viewport;
 	memset(&viewport, 0, sizeof(D3D11_VIEWPORT));
-	viewport.Height = clientHeight;
-	viewport.Width = clientWidth;
+	viewport.Width = mWidth;
+	viewport.Height = mHeight;
 	viewport.TopLeftX = 0;
 	viewport.TopLeftY = 0;
 
 	mContext->RSSetViewports(1, &viewport);
+}
+
+void
+DeviceManager::SetRenderTarget()
+{
+	ID3D11RenderTargetView* textureView = mTexture->GetRenderTargetView();
+	//mContext->OMSetRenderTargets(1, &textureView, NULL);
+	mContext->OMSetRenderTargets(1, &mBackBuffer, NULL);
+}
+
+void DeviceManager::InitTexture()
+{
+	assert(mDevice);
+	assert(mContext);
+	mTexture = new Texture(mDevice, mContext);
+	mTexture->AllocateTexture();
 }
 
 void DeviceManager::InitBackBuffer()
@@ -119,8 +134,6 @@ void DeviceManager::InitBackBuffer()
 	assert(SUCCESS(hr));
 	// sadly we only need the information to create the render target view
 	backBufferInfo->Release();
-
-	mContext->OMSetRenderTargets(1, &mBackBuffer, NULL);
 }
 
 void DeviceManager::InitD3D()
@@ -149,14 +162,14 @@ void DeviceManager::InitD3D()
 
 	// Compute the exact client dimensions. This will be used
 	// to initialize the render targets for our swap chain.
-	unsigned int clientWidth = clientRect.right - clientRect.left;
-	unsigned int clientHeight = clientRect.bottom - clientRect.top;
+	mWidth = clientRect.right - clientRect.left;
+	mHeight = clientRect.bottom - clientRect.top;
 
 	// Create the swap chain
 	DXGI_SWAP_CHAIN_DESC swapDesc;
 	memset(&swapDesc, 0, sizeof(DXGI_SWAP_CHAIN_DESC));
-	swapDesc.BufferDesc.Width = clientWidth;
-	swapDesc.BufferDesc.Height = clientHeight;
+	swapDesc.BufferDesc.Width = mWidth;
+	swapDesc.BufferDesc.Height = mHeight;
 	swapDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 	swapDesc.SampleDesc.Count = 1;
 	swapDesc.SampleDesc.Quality = 0;
@@ -253,15 +266,9 @@ void DeviceManager::InitMatrices()
 	mViewMatrix = XMMatrixLookAtLH(eyePosition, focusPoint, upDirection);
 
 	// Projection matrix takes things in the -1..1 space and puts it onto the viewport
-
-	RECT clientRect;
-	GetClientRect(mOutputWindow, &clientRect);
-
 	// Compute the exact client dimensions. This will be used
 	// to initialize the render targets for our swap chain.
-	float clientWidth = clientRect.right - clientRect.left;
-	float clientHeight = clientRect.bottom - clientRect.top;
-	mProjectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(90.0f), clientWidth / clientHeight, 0.1f, 100.0f);
+	mProjectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(90.0f), mWidth / mHeight, 0.1f, 100.0f);
 }
 
 void DeviceManager::UpdateConstantBuffers()
@@ -291,9 +298,6 @@ void DeviceManager::UpdateConstantBuffers()
 
 void DeviceManager::Draw()
 {
-	Texture testTexture(mDevice);
-	testTexture.Allocate();
-
 	DrawTriangle();
 	mSwapChain->Present(0, 0);
 }

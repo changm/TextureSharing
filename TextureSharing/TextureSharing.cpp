@@ -171,7 +171,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
-			PaintOurContent(hdc, ps);
+						PaintOurContent(hdc, ps);
             EndPaint(hWnd, &ps);
         }
         break;
