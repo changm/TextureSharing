@@ -8,7 +8,7 @@ public:
 	Texture(ID3D11Device* aDevice, ID3D11DeviceContext* aDeviceContext);
 	~Texture();
 
-	void AllocateTexture();
+	void AllocateTexture(int aWidth, int aHeight);
 	void Deallocate();
 	ID3D11Texture2D* GetTexture() {
 		return mTexture;

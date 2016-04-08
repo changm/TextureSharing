@@ -59,7 +59,8 @@ private:
 
 	// Stuff we're actually rendering to
 	// A render target is just a wrapper around the back buffer!
-	ID3D11RenderTargetView* mBackBuffer;
+	ID3D11RenderTargetView* mBackBufferView;
+	ID3D11Texture2D* mBackBuffer;
 	Texture* mTexture;
 
 	ID3D11Buffer* mConstantBuffers[ConstantBuffers::NUM_BUFFERS];

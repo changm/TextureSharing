@@ -33,9 +33,10 @@ DeviceManager::~DeviceManager()
 	mVertexShader->Release();
 	mPixelShader->Release();
 	mSwapChain->Release();
-	mBackBuffer->Release();
+	mBackBufferView->Release();
 	mDevice->Release();
 	mContext->Release();
+	mBackBuffer->Release();
 	delete mTexture;
 }
 
@@ -90,7 +91,7 @@ void DeviceManager::CompileShaders()
 // A color here should be a RGBA float
 void DeviceManager::ClearRect(FLOAT* aRGBAColor)
 {
-	mContext->ClearRenderTargetView(mBackBuffer, aRGBAColor);
+	mContext->ClearRenderTargetView(mBackBufferView, aRGBAColor);
 }
 
 void DeviceManager::InitViewport()
@@ -110,8 +111,8 @@ void
 DeviceManager::SetRenderTarget()
 {
 	ID3D11RenderTargetView* textureView = mTexture->GetRenderTargetView();
-	//mContext->OMSetRenderTargets(1, &textureView, NULL);
-	mContext->OMSetRenderTargets(1, &mBackBuffer, NULL);
+	mContext->OMSetRenderTargets(1, &textureView, NULL);
+	//mContext->OMSetRenderTargets(1, &mBackBufferView, NULL);
 }
 
 void DeviceManager::InitTexture()
@@ -119,21 +120,18 @@ void DeviceManager::InitTexture()
 	assert(mDevice);
 	assert(mContext);
 	mTexture = new Texture(mDevice, mContext);
-	mTexture->AllocateTexture();
+	mTexture->AllocateTexture(mWidth, mHeight);
 }
 
 void DeviceManager::InitBackBuffer()
 {
 	assert(mSwapChain);
-	ID3D11Texture2D* backBufferInfo;
 	// Query information about the back buffer, don't actually use anything.
-	HRESULT hr = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBufferInfo);
+	HRESULT hr = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&mBackBuffer);
 	assert(SUCCESS(hr));
 
-	hr = mDevice->CreateRenderTargetView(backBufferInfo, NULL, &mBackBuffer);
+	hr = mDevice->CreateRenderTargetView(mBackBuffer, NULL, &mBackBufferView);
 	assert(SUCCESS(hr));
-	// sadly we only need the information to create the render target view
-	backBufferInfo->Release();
 }
 
 void DeviceManager::InitD3D()
@@ -296,8 +294,14 @@ void DeviceManager::UpdateConstantBuffers()
 	mContext->VSSetConstantBuffers(0, ConstantBuffers::NUM_BUFFERS, mConstantBuffers);
 }
 
+void DeviceManager::CopyToBackBuffer()
+{
+	mContext->CopyResource(mBackBuffer, mTexture->GetTexture());
+}
+
 void DeviceManager::Draw()
 {
 	DrawTriangle();
+	CopyToBackBuffer();
 	mSwapChain->Present(0, 0);
 }

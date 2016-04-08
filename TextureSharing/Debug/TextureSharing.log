@@ -1,3 +1,6 @@
 ﻿C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(392,5): warning MSB8028: The intermediate directory (Debug\) contains files shared from another project (TextureSharing.vcxproj).  This can lead to incorrect clean and rebuild behavior.
-  TextureSharing.cpp
+  DeviceManager.cpp
+f:\projects\texturesharing\texturesharing\devicemanager.cpp(102): warning C4244: '=': conversion from 'LONG' to 'FLOAT', possible loss of data
+f:\projects\texturesharing\texturesharing\devicemanager.cpp(103): warning C4244: '=': conversion from 'LONG' to 'FLOAT', possible loss of data
+f:\projects\texturesharing\texturesharing\devicemanager.cpp(269): warning C4244: 'argument': conversion from 'LONG' to 'float', possible loss of data
   TextureSharing.vcxproj -> F:\Projects\TextureSharing\Debug\TextureSharingTest.exe
