@@ -105,12 +105,6 @@ void DeviceManager::InitD2D()
 }
 
 void
-DeviceManager::CopyToBackBuffer(ID3D11Texture2D* aTexture)
-{
-	mContext->CopyResource(mBackBuffer, aTexture);
-}
-
-void
 DeviceManager::CompileTextureShaders()
 {
 	HRESULT result;
@@ -185,6 +179,7 @@ DeviceManager::SetTextureSampling(ID3D11Texture2D* aTexture)
 	result = mDevice->CreateShaderResourceView(aTexture, NULL, &mTextureView);
 	assert(SUCCESS(result));
 
+	mContext->VSSetShaderResources(0, 1, &mTextureView);
 	mContext->PSSetShaderResources(0, 1, &mTextureView);
 	mContext->PSSetSamplers(0, 1, &mSamplerState);
 }
@@ -244,7 +239,7 @@ DeviceManager::SetIndexBuffers()
 void
 DeviceManager::DrawViaTextureShaders(ID3D11Texture2D* aTexture)
 {
-	mContext->OMSetRenderTargets(0, &mBackBufferView, NULL);
+	mContext->OMSetRenderTargets(1, &mBackBufferView, NULL);
 
 	CompileTextureShaders();
 	SetInputLayout();
@@ -258,6 +253,12 @@ DeviceManager::DrawViaTextureShaders(ID3D11Texture2D* aTexture)
 	// Finally draw the 3 vertices we have
 	int indexCount = 6;
 	mContext->DrawIndexed(indexCount, 0, 0);
+}
+
+void
+DeviceManager::CopyToBackBuffer(ID3D11Texture2D* aTexture)
+{
+	mContext->CopyResource(mBackBuffer, aTexture);
 }
 
 void DeviceManager::Draw()
