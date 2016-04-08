@@ -14,29 +14,25 @@ public:
 	void Draw();
 	~DeviceManager();
 
+	ID3D11Device* GetDevice() { return mDevice; }
+	ID3D11DeviceContext* GetDeviceContext() { return mContext; }
+	HWND GetOutputWindow() { return mOutputWindow;  }
+
 private:
 	// Init all the things
-	void Init();
 	void InitD3D();
 	void InitD2D();
-	void SetRenderTarget();
 	void InitBackBuffer();
-	void InitTexture();
-	void InitViewport();
-	void UpdateConstantBuffers();
-	void InitMatrices();
+	void CopyToBackBuffer(ID3D11Texture2D* aTexture);
+	void DrawViaTextureShaders(ID3D11Texture2D* aTexture);
 
-	// draw a clear color.
-	void ClearRect(FLOAT* aRGBAColor);
-	void DrawTriangle();
-
-	// Let's use some shaders now
-	void CompileShaders();
-	ID3D11VertexShader* mVertexShader;
-	ID3D11PixelShader* mPixelShader;
-
+	// Shaders required to draw via shaders
+	void CompileTextureShaders();
+	void InitVertexBuffers();
 	ID3D10Blob* mVertexShaderBytecode;
 	ID3D10Blob* mPixelShaderBytecode;
+	ID3D11VertexShader* mVertexShader;
+	ID3D11PixelShader* mPixelShader;
 
 	// Setup D3D
 	IDXGIFactory1* mFactory;
@@ -53,13 +49,6 @@ private:
 	// A render target is just a wrapper around the back buffer!
 	ID3D11RenderTargetView* mBackBufferView;
 	ID3D11Texture2D* mBackBuffer;
-	Texture* mTexture;
-
-	ID3D11Buffer* mConstantBuffers[ConstantBuffers::NUM_BUFFERS];
-
-	XMMATRIX mProjectionMatrix;
-	XMMATRIX mViewMatrix;
-	XMMATRIX mWorldMatrix;
 
 	LONG mWidth;
 	LONG mHeight;

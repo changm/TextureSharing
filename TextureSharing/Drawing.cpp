@@ -26,10 +26,10 @@ static void InitColor(FLOAT* aFloatOut, FLOAT r, FLOAT g, FLOAT b, FLOAT a)
 }
 
 Drawing::Drawing(HWND aOutputWindow,
-	ID3D11Device* aDevice,
-	ID3D11DeviceContext* aContext,
-	LONG aWidth,
-	LONG aHeight)
+								ID3D11Device* aDevice,
+								ID3D11DeviceContext* aContext,
+								LONG aWidth,
+								LONG aHeight)
 	: mOutputWindow(aOutputWindow)
 	, mDevice(aDevice)
 	, mContext(aContext)
@@ -122,7 +122,48 @@ struct VertexPosColor
 	XMFLOAT3 Color;
 };
 
-void Drawing::DrawTriangle()
+void Drawing::InitMatrices()
+{
+	mWorldMatrix = XMMatrixIdentity();
+
+	// view matrix is basically telling the camera where to look
+	XMVECTOR eyePosition = XMVectorSet(0, 0, -5, 1); // look -5 away for the camera
+	XMVECTOR focusPoint = XMVectorSet(0, 0, 0, 1);	// Look at the origin
+	XMVECTOR upDirection = XMVectorSet(0, 1, 0, 0);	// Set up to the the Y axis, notice W is 0 here.
+	mViewMatrix = XMMatrixLookAtLH(eyePosition, focusPoint, upDirection);
+
+	// Projection matrix takes things in the -1..1 space and puts it onto the viewport
+	// Compute the exact client dimensions. This will be used
+	// to initialize the render targets for our swap chain.
+	mProjectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(90.0f), mWidth / mHeight, 0.1f, 100.0f);
+}
+
+void Drawing::UpdateConstantBuffers()
+{
+	D3D11_BUFFER_DESC constantBufferDesc;
+	memset(&constantBufferDesc, 0, sizeof(D3D11_BUFFER_DESC));
+
+	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	constantBufferDesc.ByteWidth = sizeof(XMMATRIX);
+	constantBufferDesc.CPUAccessFlags = 0;
+	constantBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+
+	HRESULT hr = mDevice->CreateBuffer(&constantBufferDesc, nullptr, &mConstantBuffers[ConstantBuffers::WORLD]);
+	assert(SUCCESS(hr));
+
+	hr = mDevice->CreateBuffer(&constantBufferDesc, nullptr, &mConstantBuffers[ConstantBuffers::PROJECTION]);
+	assert(SUCCESS(hr));
+
+	hr = mDevice->CreateBuffer(&constantBufferDesc, nullptr, &mConstantBuffers[ConstantBuffers::VIEW]);
+	assert(SUCCESS(hr));
+
+	mContext->UpdateSubresource(mConstantBuffers[ConstantBuffers::PROJECTION], 0, nullptr, &mProjectionMatrix, 0, 0);
+	mContext->UpdateSubresource(mConstantBuffers[ConstantBuffers::VIEW], 0, nullptr, &mViewMatrix, 0, 0);
+	mContext->UpdateSubresource(mConstantBuffers[ConstantBuffers::WORLD], 0, nullptr, &mWorldMatrix, 0, 0);
+	mContext->VSSetConstantBuffers(0, ConstantBuffers::NUM_BUFFERS, mConstantBuffers);
+}
+
+ID3D11Texture2D* Drawing::Draw()
 {
 	VertexPosColor vertices[] =
 	{
@@ -176,51 +217,5 @@ void Drawing::DrawTriangle()
 	// Finally draw the 3 vertices we have
 	int vertexCount = 3;
 	mContext->Draw(vertexCount, 0);
-}
-
-void Drawing::InitMatrices()
-{
-	mWorldMatrix = XMMatrixIdentity();
-
-	// view matrix is basically telling the camera where to look
-	XMVECTOR eyePosition = XMVectorSet(0, 0, -5, 1); // look -5 away for the camera
-	XMVECTOR focusPoint = XMVectorSet(0, 0, 0, 1);	// Look at the origin
-	XMVECTOR upDirection = XMVectorSet(0, 1, 0, 0);	// Set up to the the Y axis, notice W is 0 here.
-	mViewMatrix = XMMatrixLookAtLH(eyePosition, focusPoint, upDirection);
-
-	// Projection matrix takes things in the -1..1 space and puts it onto the viewport
-	// Compute the exact client dimensions. This will be used
-	// to initialize the render targets for our swap chain.
-	mProjectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(90.0f), mWidth / mHeight, 0.1f, 100.0f);
-}
-
-void Drawing::UpdateConstantBuffers()
-{
-	D3D11_BUFFER_DESC constantBufferDesc;
-	memset(&constantBufferDesc, 0, sizeof(D3D11_BUFFER_DESC));
-
-	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	constantBufferDesc.ByteWidth = sizeof(XMMATRIX);
-	constantBufferDesc.CPUAccessFlags = 0;
-	constantBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-
-	HRESULT hr = mDevice->CreateBuffer(&constantBufferDesc, nullptr, &mConstantBuffers[ConstantBuffers::WORLD]);
-	assert(SUCCESS(hr));
-
-	hr = mDevice->CreateBuffer(&constantBufferDesc, nullptr, &mConstantBuffers[ConstantBuffers::PROJECTION]);
-	assert(SUCCESS(hr));
-
-	hr = mDevice->CreateBuffer(&constantBufferDesc, nullptr, &mConstantBuffers[ConstantBuffers::VIEW]);
-	assert(SUCCESS(hr));
-
-	mContext->UpdateSubresource(mConstantBuffers[ConstantBuffers::PROJECTION], 0, nullptr, &mProjectionMatrix, 0, 0);
-	mContext->UpdateSubresource(mConstantBuffers[ConstantBuffers::VIEW], 0, nullptr, &mViewMatrix, 0, 0);
-	mContext->UpdateSubresource(mConstantBuffers[ConstantBuffers::WORLD], 0, nullptr, &mWorldMatrix, 0, 0);
-	mContext->VSSetConstantBuffers(0, ConstantBuffers::NUM_BUFFERS, mConstantBuffers);
-}
-
-ID3D11Texture2D* Drawing::Draw()
-{
-	DrawTriangle();
 	return mTexture->GetTexture();
 }

@@ -30,7 +30,6 @@ private:
 
 	// draw a clear color.
 	void ClearRect(FLOAT* aRGBAColor);
-	void DrawTriangle();
 
 	// Let's use some shaders now
 	void CompileShaders();
