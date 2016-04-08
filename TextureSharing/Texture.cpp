@@ -25,6 +25,7 @@ Texture::AllocateTexture(int aWidth, int aHeight)
 	printf("Allocating texture\n");
 	mWidth = aWidth;
 	mHeight = aHeight;
+
 	// This is only because our d2d backend does this see:
 	// https://dxr.mozilla.org/mozilla-central/source/gfx/layers/d3d11/TextureD3D11.cpp#357
 	UINT bindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;

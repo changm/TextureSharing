@@ -1,5 +1,8 @@
+
 #include "stdafx.h"
-#include "DeviceManager.h"
+#include "Drawing.h"
+
+#include "stdafx.h"
 #include <stdio.h>
 #include <dxgi.h>
 #include <assert.h>
@@ -10,7 +13,6 @@
 #include "Vertex.h"
 #include <DirectXMath.h>
 #include "Texture.h"
-#include "Drawing.h"
 
 using namespace DirectX;
 
@@ -23,37 +25,17 @@ static void InitColor(FLOAT* aFloatOut, FLOAT r, FLOAT g, FLOAT b, FLOAT a)
 	aFloatOut[3] = a;
 }
 
-DeviceManager::DeviceManager(HWND aOutputWindow)
+Drawing::Drawing(HWND aOutputWindow,
+	ID3D11Device* aDevice,
+	ID3D11DeviceContext* aContext,
+	LONG aWidth,
+	LONG aHeight)
 	: mOutputWindow(aOutputWindow)
+	, mDevice(aDevice)
+	, mContext(aContext)
+	, mWidth(aWidth)
+	, mHeight(aHeight)
 {
-	Init();
-}
-
-DeviceManager::~DeviceManager()
-{
-	mSwapChain->Release();
-	mBackBufferView->Release();
-	mDevice->Release();
-	mContext->Release();
-	/*
-	mVertexShader->Release();
-	mPixelShader->Release();
-	mSwapChain->Release();
-	mBackBufferView->Release();
-	mDevice->Release();
-	mContext->Release();
-	mBackBuffer->Release();
-	delete mTexture;
-	*/
-}
-
-void DeviceManager::Init()
-{
-	InitD3D();
-	InitD2D();
-	InitBackBuffer();
-
-	/*
 	InitViewport();
 	InitTexture();
 	SetRenderTarget();
@@ -62,10 +44,18 @@ void DeviceManager::Init()
 	UpdateConstantBuffers();
 
 	CompileShaders();
-	*/
 }
 
-void DeviceManager::CompileShaders()
+Drawing::~Drawing()
+{
+	mVertexShader->Release();
+	mPixelShader->Release();
+	mDevice->Release();
+	mContext->Release();
+	delete mTexture;
+}
+
+void Drawing::CompileShaders()
 {
 	HRESULT result;
 
@@ -93,13 +83,12 @@ void DeviceManager::CompileShaders()
 	mContext->PSSetShader(mPixelShader, 0, 0);
 }
 
-// A color here should be a RGBA float
-void DeviceManager::ClearRect(FLOAT* aRGBAColor)
+void Drawing::ClearRect(FLOAT* aRGBAColor)
 {
-	mContext->ClearRenderTargetView(mBackBufferView, aRGBAColor);
+	//mContext->ClearRenderTargetView(mBackBufferView, aRGBAColor);
 }
 
-void DeviceManager::InitViewport()
+void Drawing::InitViewport()
 {
 	// D3d goes from -1, 1 and that maps to device space via the viewport.
 	D3D11_VIEWPORT viewport;
@@ -113,86 +102,18 @@ void DeviceManager::InitViewport()
 }
 
 void
-DeviceManager::SetRenderTarget()
+Drawing::SetRenderTarget()
 {
 	ID3D11RenderTargetView* textureView = mTexture->GetRenderTargetView();
 	mContext->OMSetRenderTargets(1, &textureView, NULL);
-	//mContext->OMSetRenderTargets(1, &mBackBufferView, NULL);
 }
 
-void DeviceManager::InitTexture()
+void Drawing::InitTexture()
 {
 	assert(mDevice);
 	assert(mContext);
 	mTexture = new Texture(mDevice, mContext);
 	mTexture->AllocateTexture(mWidth, mHeight);
-}
-
-void DeviceManager::InitBackBuffer()
-{
-	assert(mSwapChain);
-	// Query information about the back buffer, don't actually use anything.
-	HRESULT hr = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&mBackBuffer);
-	assert(SUCCESS(hr));
-
-	hr = mDevice->CreateRenderTargetView(mBackBuffer, NULL, &mBackBufferView);
-	assert(SUCCESS(hr));
-}
-
-void DeviceManager::InitD3D()
-{
-	HRESULT hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&mFactory);
-	assert(SUCCESS(hr));
-
-	// Get the primary adapter, which is the GPU
-	hr = mFactory->EnumAdapters1(0, &mAdapter);
-	assert(SUCCESS(hr));
-
-	// Get the device!
-	hr = D3D11CreateDevice(mAdapter,
-		D3D_DRIVER_TYPE_UNKNOWN,
-		NULL,
-		D3D11_CREATE_DEVICE_BGRA_SUPPORT,
-		NULL, 0, // d3d feature levels
-		D3D11_SDK_VERSION,
-		&mDevice,
-		NULL, &mContext);
-	assert(SUCCESS(hr));
-
-	RECT clientRect;
-	GetClientRect(mOutputWindow, &clientRect);
-
-	// Compute the exact client dimensions. This will be used
-	// to initialize the render targets for our swap chain.
-	mWidth = clientRect.right - clientRect.left;
-	mHeight = clientRect.bottom - clientRect.top;
-
-	// Create the swap chain
-	DXGI_SWAP_CHAIN_DESC swapDesc;
-	memset(&swapDesc, 0, sizeof(DXGI_SWAP_CHAIN_DESC));
-	swapDesc.BufferDesc.Width = mWidth;
-	swapDesc.BufferDesc.Height = mHeight;
-	swapDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	swapDesc.SampleDesc.Count = 1;
-	swapDesc.SampleDesc.Quality = 0;
-	swapDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	// Only 1 buffer since the desktop screen is our front buffer?
-	swapDesc.BufferCount = 1;
-	swapDesc.OutputWindow = mOutputWindow;
-	swapDesc.Windowed = TRUE;
-	swapDesc.Flags = 0;
-	swapDesc.SwapEffect = DXGI_SWAP_EFFECT_SEQUENTIAL;
-
-	hr = mFactory->CreateSwapChain(mDevice, &swapDesc, &mSwapChain);
-	assert(SUCCESS(hr));
-}
-
-void DeviceManager::InitD2D()
-{
-	HRESULT hr = D2D1CreateFactory(
-		D2D1_FACTORY_TYPE_MULTI_THREADED,
-		&mD2DFactory);
-	assert(SUCCESS(hr));
 }
 
 struct VertexPosColor
@@ -201,7 +122,7 @@ struct VertexPosColor
 	XMFLOAT3 Color;
 };
 
-void DeviceManager::DrawTriangle()
+void Drawing::DrawTriangle()
 {
 	VertexPosColor vertices[] =
 	{
@@ -257,7 +178,7 @@ void DeviceManager::DrawTriangle()
 	mContext->Draw(vertexCount, 0);
 }
 
-void DeviceManager::InitMatrices()
+void Drawing::InitMatrices()
 {
 	mWorldMatrix = XMMatrixIdentity();
 
@@ -273,7 +194,7 @@ void DeviceManager::InitMatrices()
 	mProjectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(90.0f), mWidth / mHeight, 0.1f, 100.0f);
 }
 
-void DeviceManager::UpdateConstantBuffers()
+void Drawing::UpdateConstantBuffers()
 {
 	D3D11_BUFFER_DESC constantBufferDesc;
 	memset(&constantBufferDesc, 0, sizeof(D3D11_BUFFER_DESC));
@@ -298,10 +219,8 @@ void DeviceManager::UpdateConstantBuffers()
 	mContext->VSSetConstantBuffers(0, ConstantBuffers::NUM_BUFFERS, mConstantBuffers);
 }
 
-void DeviceManager::Draw()
+ID3D11Texture2D* Drawing::Draw()
 {
-	Drawing draw(mOutputWindow, mDevice, mContext, mWidth, mHeight);
-	ID3D11Texture2D* result = draw.Draw();
-	mContext->CopyResource(mBackBuffer, result);
-	mSwapChain->Present(0, 0);
+	DrawTriangle();
+	return mTexture->GetTexture();
 }

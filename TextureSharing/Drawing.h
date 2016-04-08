@@ -1,26 +1,28 @@
 #pragma once
+#include <direct.h>
 #include <d3d11.h>
-#include <d2d1.h>
 #include <DirectXMath.h>
 
+// Basically draw target, but couldn't come up with a better name
+class Texture;
 using namespace DirectX;
 
-class Texture;
-
 // Manages our d3d devices for us
-class DeviceManager {
+class Drawing {
 public:
-	DeviceManager(HWND aHDC);
-	void Draw();
-	~DeviceManager();
+	Drawing(HWND aOutputWindow,
+					ID3D11Device* aDevice,
+					ID3D11DeviceContext* aContext,
+					LONG aWidth,
+					LONG aHeight);
+
+	// Returns the finished drawing! Only alive as long as this object is alive
+	ID3D11Texture2D* Draw();
+	~Drawing();
 
 private:
 	// Init all the things
-	void Init();
-	void InitD3D();
-	void InitD2D();
 	void SetRenderTarget();
-	void InitBackBuffer();
 	void InitTexture();
 	void InitViewport();
 	void UpdateConstantBuffers();
@@ -39,20 +41,11 @@ private:
 	ID3D10Blob* mPixelShaderBytecode;
 
 	// Setup D3D
-	IDXGIFactory1* mFactory;
 	ID3D11Device* mDevice;
-	IDXGIAdapter1* mAdapter;
-	IDXGISwapChain* mSwapChain;
 	ID3D11DeviceContext* mContext;
 	HWND mOutputWindow;
 
-	// Now we can setup D2D
-	ID2D1Factory* mD2DFactory;
-
-	// Stuff we're actually rendering to
-	// A render target is just a wrapper around the back buffer!
-	ID3D11RenderTargetView* mBackBufferView;
-	ID3D11Texture2D* mBackBuffer;
+	ID3D11RenderTargetView* mRenderTarget;
 	Texture* mTexture;
 
 	ID3D11Buffer* mConstantBuffers[ConstantBuffers::NUM_BUFFERS];

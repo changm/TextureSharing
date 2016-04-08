@@ -17,5 +17,15 @@
 #include <memory.h>
 #include <tchar.h>
 
+enum ConstantBuffers {
+	WORLD,
+	PROJECTION,
+	VIEW,
+	NUM_BUFFERS
+};
+
+static bool SUCCESS(HRESULT aResult) {
+	return aResult == S_OK;
+}
 
 // TODO: reference additional headers your program requires here
