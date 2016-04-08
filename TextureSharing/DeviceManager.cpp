@@ -179,7 +179,6 @@ DeviceManager::SetTextureSampling(ID3D11Texture2D* aTexture)
 	result = mDevice->CreateShaderResourceView(aTexture, NULL, &mTextureView);
 	assert(SUCCESS(result));
 
-	mContext->VSSetShaderResources(0, 1, &mTextureView);
 	mContext->PSSetShaderResources(0, 1, &mTextureView);
 	mContext->PSSetSamplers(0, 1, &mSamplerState);
 }
@@ -265,7 +264,7 @@ void DeviceManager::Draw()
 {
 	Drawing draw(mOutputWindow, mDevice, mContext, mWidth, mHeight);
 	ID3D11Texture2D* result = draw.Draw();
-	//CopyToBackBuffer(result);
-	DrawViaTextureShaders(result);
+	CopyToBackBuffer(result);
+	//DrawViaTextureShaders(result);
 	mSwapChain->Present(0, 0);
 }
