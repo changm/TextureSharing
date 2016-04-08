@@ -52,6 +52,8 @@ Drawing::~Drawing()
 	mPixelShader->Release();
 	mDevice->Release();
 	mContext->Release();
+	mVertexBuffer->Release();
+	mIndexBuffer->Release();
 	delete mTexture;
 }
 
@@ -163,17 +165,45 @@ void Drawing::UpdateConstantBuffers()
 	mContext->VSSetConstantBuffers(0, ConstantBuffers::NUM_BUFFERS, mConstantBuffers);
 }
 
-ID3D11Texture2D* Drawing::Draw()
+// let's try a square
+VertexPosColor vertices[] =
 {
-	VertexPosColor vertices[] =
-	{
-		{ XMFLOAT3(-1, -1, 0), XMFLOAT3(1, 1, 1) }, // origin
-		{ XMFLOAT3(-1, 1, 0), XMFLOAT3(1, 1, 1) }, // y
-		{ XMFLOAT3(1, 1, 0), XMFLOAT3(1, 1, 1) },
-	};
+	{ XMFLOAT3(-1, -1, 0), XMFLOAT3(1, 1, 1) }, // bottom left
+	{ XMFLOAT3(-1, 1, 0), XMFLOAT3(1, 1, 1) },	// top left
+	{ XMFLOAT3(1, 1, 0), XMFLOAT3(1, 1, 1) },		// top right
+	{ XMFLOAT3(1, -1, 0), XMFLOAT3(1, 1, 1) },	// bottom right
+};
 
-	// Now we create a buffer for our triangle
-	ID3D11Buffer* triangleBuffer;
+int indices[] =
+{
+	0, 1, 2,	// bottom left, top left, top right
+	3, 0, 2		// bottom right, bottom left, top right
+};
+
+void Drawing::SetIndexBuffers()
+{
+	D3D11_BUFFER_DESC indexBufferDesc;
+	memset(&indexBufferDesc, 0, sizeof(D3D11_BUFFER_DESC));
+
+	int indexCount = 6;
+	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	indexBufferDesc.ByteWidth = sizeof(int) * indexCount;
+	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	indexBufferDesc.CPUAccessFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA indexResourceData;
+	memset(&indexResourceData, 0, sizeof(D3D11_SUBRESOURCE_DATA));
+	indexResourceData.pSysMem = indices;
+
+	HRESULT result = mDevice->CreateBuffer(&indexBufferDesc, &indexResourceData, &mIndexBuffer);
+	assert(SUCCESS(result));
+
+	mContext->IASetIndexBuffer(mIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+}
+
+void Drawing::UploadVertices()
+{
+		// Now we create a buffer for our triangle
 	D3D11_BUFFER_DESC bufferDesc;
 	memset(&bufferDesc, 0, sizeof(bufferDesc));
 
@@ -187,9 +217,18 @@ ID3D11Texture2D* Drawing::Draw()
 	resourceData.pSysMem = vertices;
 
 	// This uploads the data to the gpu
-	HRESULT result = mDevice->CreateBuffer(&bufferDesc, &resourceData, &triangleBuffer);
+	HRESULT result = mDevice->CreateBuffer(&bufferDesc, &resourceData, &mVertexBuffer);
 	assert(SUCCESS(result));
 
+	// Finally draw the things, set the vertex buffers to the one that we uploaded to the gpu
+	UINT stride = sizeof(VertexPosColor);
+	UINT offset = 0;
+	mContext->IASetVertexBuffers(0, 1, &mVertexBuffer, &stride, &offset);
+}
+
+void
+Drawing::SetInputLayout()
+{
 	// Time to create the input buffer things
 	D3D11_INPUT_ELEMENT_DESC inputDesc[] =
 	{
@@ -199,23 +238,25 @@ ID3D11Texture2D* Drawing::Draw()
 	};
 
 	ID3D11InputLayout* inputLayout;
-	result = mDevice->CreateInputLayout(inputDesc, 2,
-		mVertexShaderBytecode->GetBufferPointer(),
-		mVertexShaderBytecode->GetBufferSize(),
-		&inputLayout);
+	HRESULT result = mDevice->CreateInputLayout(inputDesc, 2,
+														mVertexShaderBytecode->GetBufferPointer(),
+														mVertexShaderBytecode->GetBufferSize(),
+														&inputLayout);
 	assert(SUCCESS(result));
 	mContext->IASetInputLayout(inputLayout);
-
-	// Finally draw the things, set the vertex buffers to the one that we uploaded to the gpu
-	UINT stride = sizeof(VertexPosColor);
-	UINT offset = 0;
-	mContext->IASetVertexBuffers(0, 1, &triangleBuffer, &stride, &offset);
-
 	// Tell the GPU we just have a list of triangles
 	mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//mContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+}
+
+ID3D11Texture2D* Drawing::Draw()
+{
+	UploadVertices();
+	SetInputLayout();
+	SetIndexBuffers();
 
 	// Finally draw the 3 vertices we have
-	int vertexCount = 3;
-	mContext->Draw(vertexCount, 0);
+	int indexCount = 6;	// 2 triangles to make a square!
+	mContext->DrawIndexed(indexCount, 0, 0);
 	return mTexture->GetTexture();
 }

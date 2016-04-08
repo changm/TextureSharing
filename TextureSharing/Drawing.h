@@ -27,6 +27,9 @@ private:
 	void InitViewport();
 	void UpdateConstantBuffers();
 	void InitMatrices();
+	void UploadVertices();
+	void SetInputLayout();
+	void SetIndexBuffers();
 
 	// draw a clear color.
 	void ClearRect(FLOAT* aRGBAColor);
@@ -55,4 +58,8 @@ private:
 
 	LONG mWidth;
 	LONG mHeight;
+
+	// Our buffers
+	ID3D11Buffer* mVertexBuffer;
+	ID3D11Buffer* mIndexBuffer;
 };
