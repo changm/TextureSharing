@@ -29,7 +29,7 @@ private:
 	void InitMatrices();
 	void UploadVertices();
 	void SetInputLayout();
-	void SetIndexBuffers();
+	int SetIndexBuffers();
 
 	// draw a clear color.
 	void ClearRect(FLOAT* aRGBAColor);

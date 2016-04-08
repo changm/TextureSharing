@@ -166,7 +166,7 @@ void Drawing::UpdateConstantBuffers()
 }
 
 // let's try a square
-VertexPosColor vertices[] =
+static VertexPosColor vertices[] =
 {
 	{ XMFLOAT3(-1, -1, 0), XMFLOAT3(1, 1, 1) }, // bottom left
 	{ XMFLOAT3(-1, 1, 0), XMFLOAT3(1, 1, 1) },	// top left
@@ -174,13 +174,13 @@ VertexPosColor vertices[] =
 	{ XMFLOAT3(1, -1, 0), XMFLOAT3(1, 1, 1) },	// bottom right
 };
 
-int indices[] =
+static int indices[] =
 {
 	0, 1, 2,	// bottom left, top left, top right
 	3, 0, 2		// bottom right, bottom left, top right
 };
 
-void Drawing::SetIndexBuffers()
+int Drawing::SetIndexBuffers()
 {
 	D3D11_BUFFER_DESC indexBufferDesc;
 	memset(&indexBufferDesc, 0, sizeof(D3D11_BUFFER_DESC));
@@ -199,6 +199,7 @@ void Drawing::SetIndexBuffers()
 	assert(SUCCESS(result));
 
 	mContext->IASetIndexBuffer(mIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	return indexCount;
 }
 
 void Drawing::UploadVertices()
@@ -246,17 +247,14 @@ Drawing::SetInputLayout()
 	mContext->IASetInputLayout(inputLayout);
 	// Tell the GPU we just have a list of triangles
 	mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	//mContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 }
 
 ID3D11Texture2D* Drawing::Draw()
 {
 	UploadVertices();
 	SetInputLayout();
-	SetIndexBuffers();
+	int indexCount = SetIndexBuffers();
 
-	// Finally draw the 3 vertices we have
-	int indexCount = 6;	// 2 triangles to make a square!
 	mContext->DrawIndexed(indexCount, 0, 0);
 	return mTexture->GetTexture();
 }

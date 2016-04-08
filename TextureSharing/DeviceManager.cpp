@@ -28,6 +28,11 @@ DeviceManager::~DeviceManager()
 	mBackBufferView->Release();
 	mDevice->Release();
 	mContext->Release();
+
+	if (mIndexBuffer) {
+		mIndexBuffer->Release();
+		mVertexBuffer->Release();
+	}
 }
 
 void DeviceManager::InitBackBuffer()
@@ -138,19 +143,39 @@ struct VertexData
 	XMFLOAT2 Tex;	// (u,v) goes from 0..1, with 0 being top left
 };
 
+static VertexData vertices[] =
+{
+	{ XMFLOAT3(-1, -1, 0), XMFLOAT2(0,1) }, // bottom left
+	{ XMFLOAT3(-1, 1, 0), XMFLOAT2(0,0) },  // top left
+	{ XMFLOAT3(1, 1, 0), XMFLOAT2(1,0) },	  // top right
+	{ XMFLOAT3(1, -1, 0), XMFLOAT2(1,1) },  // bottom right
+};
+
+void
+DeviceManager::SetInputLayout()
+{
+	// Time to create the input buffer things
+	D3D11_INPUT_ELEMENT_DESC inputDesc[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(VertexData, Tex), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	ID3D11InputLayout* inputLayout;
+	const int inputCount = sizeof(inputDesc) / sizeof(VertexData);
+	assert(inputCount == 2);
+
+	HRESULT result = mDevice->CreateInputLayout(inputDesc, 2,
+							mVertexShaderBytecode->GetBufferPointer(),
+							mVertexShaderBytecode->GetBufferSize(),
+							&inputLayout);
+	assert(SUCCESS(result));
+	mContext->IASetInputLayout(inputLayout);
+}
+
 void
 DeviceManager::InitVertexBuffers()
 {
-	VertexData vertices[] =
-	{
-		{ XMFLOAT3(-1, -1, 0), XMFLOAT2(0,1) }, // bottom left
-		{ XMFLOAT3(-1, 1, 0), XMFLOAT2(0,0) },  // top left
-		{ XMFLOAT3(1, 1, 0), XMFLOAT2(1,0) },	  // top right
-		{ XMFLOAT3(1, -1, 0), XMFLOAT2(1,1) },  // bottom right
-	};
-
-	// Now we create a buffer for our triangle
-	ID3D11Buffer* screenBuffer;
 	D3D11_BUFFER_DESC bufferDesc;
 	memset(&bufferDesc, 0, sizeof(bufferDesc));
 
@@ -164,46 +189,58 @@ DeviceManager::InitVertexBuffers()
 	resourceData.pSysMem = vertices;
 
 	// This uploads the data to the gpu
-	HRESULT result = mDevice->CreateBuffer(&bufferDesc, &resourceData, &screenBuffer);
+	HRESULT result = mDevice->CreateBuffer(&bufferDesc, &resourceData, &mVertexBuffer);
 	assert(SUCCESS(result));
 
-	// Time to create the input buffer things
-	D3D11_INPUT_ELEMENT_DESC inputDesc[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(VertexData, Tex), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
-
-	ID3D11InputLayout* inputLayout;
-	const int inputCount = sizeof(inputDesc) / sizeof(VertexData);
-	//assert(inputCount == 2);
-
-	result = mDevice->CreateInputLayout(inputDesc, 2,
-		mVertexShaderBytecode->GetBufferPointer(),
-		mVertexShaderBytecode->GetBufferSize(),
-		&inputLayout);
-	assert(SUCCESS(result));
-	mContext->IASetInputLayout(inputLayout);
-
-	// Finally draw the things, set the vertex buffers to the one that we uploaded to the gpu
 	UINT stride = sizeof(VertexData);
 	UINT offset = 0;
-	mContext->IASetVertexBuffers(0, 1, &screenBuffer, &stride, &offset);
+	mContext->IASetVertexBuffers(0, 1, &mVertexBuffer, &stride, &offset);
+}
 
-	// Tell the GPU we just have a list of triangles
-	mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+static int indices[] =
+{
+	0, 1, 2,	// bottom left, top left, top right
+	3, 0, 2		// bottom right, bottom left, top right
+};
 
-	// Finally draw the 3 vertices we have
-	int vertexCount = 4;
-	mContext->Draw(vertexCount, 0);
+void 
+DeviceManager::SetIndexBuffers()
+{
+	D3D11_BUFFER_DESC indexBufferDesc;
+	memset(&indexBufferDesc, 0, sizeof(D3D11_BUFFER_DESC));
+
+	int indexCount = 6;
+	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	indexBufferDesc.ByteWidth = sizeof(int) * indexCount;
+	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	indexBufferDesc.CPUAccessFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA indexResourceData;
+	memset(&indexResourceData, 0, sizeof(D3D11_SUBRESOURCE_DATA));
+	indexResourceData.pSysMem = indices;
+
+	HRESULT result = mDevice->CreateBuffer(&indexBufferDesc, &indexResourceData, &mIndexBuffer);
+	assert(SUCCESS(result));
+
+	mContext->IASetIndexBuffer(mIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 }
 
 void
 DeviceManager::DrawViaTextureShaders(ID3D11Texture2D* aTexture)
 {
 	mContext->OMSetRenderTargets(0, &mBackBufferView, NULL);
+
 	CompileTextureShaders();
+	SetInputLayout();
 	InitVertexBuffers();
+	SetIndexBuffers();
+
+	// Tell the GPU we just have a list of triangles
+	mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// Finally draw the 3 vertices we have
+	int indexCount = 6;
+	mContext->DrawIndexed(indexCount, 0, 0);
 }
 
 void DeviceManager::Draw()

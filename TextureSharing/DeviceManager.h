@@ -26,9 +26,16 @@ private:
 	void CopyToBackBuffer(ID3D11Texture2D* aTexture);
 	void DrawViaTextureShaders(ID3D11Texture2D* aTexture);
 
-	// Shaders required to draw via shaders
+	// functions required to draw via shaders
 	void CompileTextureShaders();
 	void InitVertexBuffers();
+	void SetInputLayout();
+	void SetIndexBuffers();
+
+	ID3D11Buffer* mVertexBuffer;
+	ID3D11Buffer* mIndexBuffer;
+
+
 	ID3D10Blob* mVertexShaderBytecode;
 	ID3D10Blob* mPixelShaderBytecode;
 	ID3D11VertexShader* mVertexShader;
