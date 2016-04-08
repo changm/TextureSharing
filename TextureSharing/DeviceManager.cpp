@@ -32,6 +32,8 @@ DeviceManager::~DeviceManager()
 	if (mIndexBuffer) {
 		mIndexBuffer->Release();
 		mVertexBuffer->Release();
+		mSamplerState->Release();
+		mTextureView->Release();
 	}
 }
 
@@ -174,6 +176,20 @@ DeviceManager::SetInputLayout()
 }
 
 void
+DeviceManager::SetTextureSampling(ID3D11Texture2D* aTexture)
+{
+	CD3D11_SAMPLER_DESC samplerDesc(D3D11_DEFAULT);
+	HRESULT result = mDevice->CreateSamplerState(&samplerDesc, &mSamplerState);
+	assert(SUCCESS(result));
+
+	result = mDevice->CreateShaderResourceView(aTexture, NULL, &mTextureView);
+	assert(SUCCESS(result));
+
+	mContext->PSSetShaderResources(0, 1, &mTextureView);
+	mContext->PSSetSamplers(0, 1, &mSamplerState);
+}
+
+void
 DeviceManager::InitVertexBuffers()
 {
 	D3D11_BUFFER_DESC bufferDesc;
@@ -234,6 +250,7 @@ DeviceManager::DrawViaTextureShaders(ID3D11Texture2D* aTexture)
 	SetInputLayout();
 	InitVertexBuffers();
 	SetIndexBuffers();
+	SetTextureSampling(aTexture);
 
 	// Tell the GPU we just have a list of triangles
 	mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -247,7 +264,7 @@ void DeviceManager::Draw()
 {
 	Drawing draw(mOutputWindow, mDevice, mContext, mWidth, mHeight);
 	ID3D11Texture2D* result = draw.Draw();
-	CopyToBackBuffer(result);
-	//DrawViaTextureShaders(result);
+	//CopyToBackBuffer(result);
+	DrawViaTextureShaders(result);
 	mSwapChain->Present(0, 0);
 }

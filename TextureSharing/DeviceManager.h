@@ -31,10 +31,11 @@ private:
 	void InitVertexBuffers();
 	void SetInputLayout();
 	void SetIndexBuffers();
+	void SetTextureSampling(ID3D11Texture2D* aTexture);
 
 	ID3D11Buffer* mVertexBuffer;
 	ID3D11Buffer* mIndexBuffer;
-
+	ID3D11ShaderResourceView* mTextureView;
 
 	ID3D10Blob* mVertexShaderBytecode;
 	ID3D10Blob* mPixelShaderBytecode;
@@ -59,4 +60,6 @@ private:
 
 	LONG mWidth;
 	LONG mHeight;
+
+	ID3D11SamplerState* mSamplerState;
 };
