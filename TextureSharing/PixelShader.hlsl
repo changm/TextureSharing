@@ -6,6 +6,5 @@ struct Input
 
 float4 main(Input input) : SV_TARGET
 {
-	//return input.color;
-	return (1.0f, 1.0f, 1.0f, 1.0f);
+	return float4(1, 0, 0, 1);
 }

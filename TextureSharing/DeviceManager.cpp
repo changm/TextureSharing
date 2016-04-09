@@ -264,7 +264,7 @@ void DeviceManager::Draw()
 {
 	Drawing draw(mOutputWindow, mDevice, mContext, mWidth, mHeight);
 	ID3D11Texture2D* result = draw.Draw();
-	CopyToBackBuffer(result);
-	//DrawViaTextureShaders(result);
+	//CopyToBackBuffer(result);
+	DrawViaTextureShaders(result);
 	mSwapChain->Present(0, 0);
 }

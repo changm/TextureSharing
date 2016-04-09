@@ -33,7 +33,7 @@ VertexShaderOutput main(VertexShaderInput input)
 	matrix mvp = mul(projectionMatrix, mul(viewMatrix, worldMatrix));
 
 	// Since we're just outputting the surface, don't have to do anything
-	output.Position = mul(mvp, float4(input.Position, 1.0));
+	output.Position = float4(input.Position, 1.0);
 
 	// And pass along the texture coordinates
 	output.Tex = input.Tex;
