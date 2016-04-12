@@ -147,6 +147,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Compositor.h" />
     <ClInclude Include="DeviceManager.h" />
     <ClInclude Include="Drawing.h" />
     <ClInclude Include="Resource.h" />
@@ -157,6 +158,7 @@
     <ClInclude Include="Vertex.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Compositor.cpp" />
     <ClCompile Include="DeviceManager.cpp" />
     <ClCompile Include="Drawing.cpp" />
     <ClCompile Include="stdafx.cpp">

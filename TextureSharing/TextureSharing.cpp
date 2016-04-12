@@ -9,6 +9,11 @@
 #include <Windows.h>
 #include <dxgi.h>
 #include <assert.h>
+#include "windows.h"
+#include <string>
+#include <shellapi.h>
+#include <atlbase.h>
+#include <atlconv.h>
 
 #include "DeviceManager.h"
 
@@ -44,23 +49,42 @@ HACCEL LoadNativeWindow(HINSTANCE hInstance, int nCmdShow) {
 
     // Perform application initialization:
     if (!InitInstance (hInstance, nCmdShow)) {
-		printf("Could not create window, exiting");
-		exit(1);
+			printf("Could not create window, exiting");
+			exit(1);
     }
 
     return LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_TEXTURESHARING));
 }
 
-int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-                     _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPWSTR    lpCmdLine,
-                     _In_ int       nCmdShow)
+void CreateContentProcess()
 {
-	InitConsole();
-	printf("Starting console\n");
+	STARTUPINFO startupInfo;
+	memset(&startupInfo, 0, sizeof(startupInfo));
+	startupInfo.cb = sizeof(startupInfo);
 
-    UNREFERENCED_PARAMETER(hPrevInstance);
-    UNREFERENCED_PARAMETER(lpCmdLine);
+	PROCESS_INFORMATION newProcInfo;
+	memset(&newProcInfo, 0, sizeof(newProcInfo));
+
+	std::string commandLine = GetCommandLineA();
+	commandLine += "child";
+	BOOL success = CreateProcess(NULL, CA2W(commandLine.c_str()),
+																NULL, NULL, FALSE,
+																NULL, NULL, NULL, &startupInfo, &newProcInfo);
+
+	if (success) {
+		WaitForInputIdle(newProcInfo.hProcess, 100);
+		CloseHandle(newProcInfo.hProcess);
+		CloseHandle(newProcInfo.hThread);
+	}
+	else {
+		DWORD error = GetLastError();
+		printf("Could not craete content process, %u\n", error);
+	}
+}
+
+static int ParentMain(HINSTANCE hInstance, int nCmdShow) {
+	CreateContentProcess();
+
 	// These are for like "File" menu and such i guess / windows keyboard shortcuts
 	HACCEL keyBindings = LoadNativeWindow(hInstance, nCmdShow);
 
@@ -82,11 +106,36 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	return (int) msg.wParam;
 }
 
+static void ChildMain()
+{
+	exit(1);
+}
+
+static bool IsParent(LPWSTR aCommandLine) {
+	int argc = 0;
+	LPWSTR* argv = CommandLineToArgvW(aCommandLine, &argc);
+	return wcscmp(L"child", argv[0]);
+}
+
+int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
+                     _In_opt_ HINSTANCE hPrevInstance,
+                     _In_ LPWSTR    lpCmdLine,
+                     _In_ int       nCmdShow)
+{
+	UNREFERENCED_PARAMETER(hPrevInstance);
+
+	InitConsole();
+	if (IsParent(lpCmdLine)) {
+		ParentMain(hInstance, nCmdShow);
+	} else {
+		ChildMain();
+	}
+}
+
 //
 //  FUNCTION: MyRegisterClass()
 //
 //  PURPOSE: Registers the window class.
-//
 ATOM MyRegisterClass(HINSTANCE hInstance) {
     WNDCLASSEXW wcex;
 
@@ -144,8 +193,6 @@ void PaintOurContent(HDC aHDC, PAINTSTRUCT& aPS) {
 //  WM_COMMAND  - process the application menu
 //  WM_PAINT    - Paint the main window
 //  WM_DESTROY  - post a quit message and return
-//
-//
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
