@@ -18,17 +18,10 @@
 
 #define MAX_LOADSTRING 100
 
-
 // Global Variables:
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
-
-DeviceManager* globalDeviceManager;
-
-void PaintOurContent(HDC aHDC, PAINTSTRUCT& aPS) {
-	globalDeviceManager->Draw();
-}
 
 // Listen for the about
 INT_PTR CALLBACK
@@ -77,7 +70,7 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hWnd, &ps);
-		PaintOurContent(hdc, ps);
+		Compositor::GetCompositor(hWnd)->Composite();
 		EndPaint(hWnd, &ps);
 	}
 	break;
@@ -90,22 +83,20 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-
-
 HACCEL
 Parent::LoadNativeWindow() {
 	// Initialize global strings
-	LoadStringW(mInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-	LoadStringW(mInstance, IDC_TEXTURESHARING, szWindowClass, MAX_LOADSTRING);
-	RegisterWindow(mInstance);
+	LoadStringW(hInst, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+	LoadStringW(hInst, IDC_TEXTURESHARING, szWindowClass, MAX_LOADSTRING);
+	RegisterWindow(hInst);
 
 	// Perform application initialization:
-	if (!InitInstance(mInstance, mCmdShow)) {
+	if (!InitInstance(hInst, mCmdShow)) {
 		printf("Could not create window, exiting");
 		exit(1);
 	}
 
-	return LoadAccelerators(mInstance, MAKEINTRESOURCE(IDC_TEXTURESHARING));
+	return LoadAccelerators(hInst, MAKEINTRESOURCE(IDC_TEXTURESHARING));
 }
 
 void
@@ -167,10 +158,8 @@ Parent::InitInstance(HINSTANCE hInstance, int nCmdShow)
 }
 
 Parent::Parent(HINSTANCE aInstance, int aCmdShow)
-	: mInstance(aInstance)
-	, mCmdShow(aCmdShow)
+	: mCmdShow(aCmdShow)
 {
-	mCompositor = new Compositor();
 	CreateContentProcess();
 }
 
@@ -178,7 +167,6 @@ Parent::~Parent()
 {
 	CloseHandle(mChildProcess.hProcess);
 	CloseHandle(mChildProcess.hThread);
-	delete mCompositor;
 }
 
 void Parent::GenerateWindow()
@@ -187,8 +175,6 @@ void Parent::GenerateWindow()
 	HACCEL keyBindings = LoadNativeWindow();
 
 	assert(mOutputWindow);
-	DeviceManager deviceManager(mOutputWindow);
-	globalDeviceManager = &deviceManager;
 	UpdateWindow(mOutputWindow);
 
 	MSG msg;

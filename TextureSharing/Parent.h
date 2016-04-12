@@ -19,9 +19,7 @@ private:
 	ATOM                RegisterWindow(HINSTANCE hInstance);
 	BOOL                InitInstance(HINSTANCE, int);
 
-	DeviceManager* mDeviceManager;
 	int mCmdShow;
-	HINSTANCE mInstance;
 	HWND mOutputWindow;
 
 	PROCESS_INFORMATION mChildProcess;
