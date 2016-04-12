@@ -16,31 +16,15 @@ public:
 
 	ID3D11Device* GetDevice() { return mDevice; }
 	ID3D11DeviceContext* GetDeviceContext() { return mContext; }
+	IDXGISwapChain* GetSwapChain() { return mSwapChain; }
 	HWND GetOutputWindow() { return mOutputWindow;  }
+	LONG GetBackBufferWidth() { return mWidth;  }
+	LONG GetBackBufferHeight() { return mHeight;  }
 
 private:
 	// Init all the things
 	void InitD3D();
 	void InitD2D();
-	void InitBackBuffer();
-	void CopyToBackBuffer(ID3D11Texture2D* aTexture);
-	void DrawViaTextureShaders(ID3D11Texture2D* aTexture);
-
-	// functions required to draw via shaders
-	void CompileTextureShaders();
-	void InitVertexBuffers();
-	void SetInputLayout();
-	void SetIndexBuffers();
-	void SetTextureSampling(ID3D11Texture2D* aTexture);
-
-	ID3D11Buffer* mVertexBuffer;
-	ID3D11Buffer* mIndexBuffer;
-	ID3D11ShaderResourceView* mTextureView;
-
-	ID3D10Blob* mVertexShaderBytecode;
-	ID3D10Blob* mPixelShaderBytecode;
-	ID3D11VertexShader* mVertexShader;
-	ID3D11PixelShader* mPixelShader;
 
 	// Setup D3D
 	IDXGIFactory1* mFactory;
@@ -60,6 +44,4 @@ private:
 
 	LONG mWidth;
 	LONG mHeight;
-
-	ID3D11SamplerState* mSamplerState;
 };

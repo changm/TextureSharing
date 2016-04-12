@@ -22,7 +22,8 @@ Texture::~Texture()
 void
 Texture::AllocateTexture(int aWidth, int aHeight)
 {
-	printf("Allocating texture\n");
+	assert(aWidth);
+	assert(aHeight);
 	mWidth = aWidth;
 	mHeight = aHeight;
 
