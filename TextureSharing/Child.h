@@ -1,6 +1,7 @@
 #pragma once
 
 class DeviceManager;
+class ChildPipe;
 
 class Child
 {
@@ -9,7 +10,9 @@ public:
 	~Child();
 
 	void Draw();
+	void MessageLoop();
 
 private:
 	DeviceManager* mDeviceManager;
+	ChildPipe* mPipe;
 };

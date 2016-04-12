@@ -218,7 +218,7 @@ Compositor::CopyToBackBuffer(ID3D11Texture2D* aTexture)
 void
 Compositor::Composite()
 {
-	Drawing draw(mOutputWindow, mDevice, mContext, mWidth, mHeight);
+	Drawing draw(mDevice, mContext, mWidth, mHeight);
 	ID3D11Texture2D* result = draw.Draw();
 	//CopyToBackBuffer(result);
 	DrawViaTextureShaders(result);

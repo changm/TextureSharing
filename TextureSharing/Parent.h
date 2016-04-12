@@ -2,6 +2,7 @@
 
 class Compositor;
 class DeviceManager;
+class ServerPipe;
 
 class Parent
 {
@@ -24,4 +25,6 @@ private:
 
 	PROCESS_INFORMATION mChildProcess;
 	Compositor* mCompositor;
+
+	ServerPipe* mPipe;
 };

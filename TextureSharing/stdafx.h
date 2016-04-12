@@ -29,3 +29,8 @@ static bool SUCCESS(HRESULT aResult) {
 }
 
 // TODO: reference additional headers your program requires here
+#include "DeviceManager.h"
+#include "Drawing.h"
+#include "Texture.h"
+#include "pipe.h"
+

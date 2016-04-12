@@ -25,13 +25,11 @@ static void InitColor(FLOAT* aFloatOut, FLOAT r, FLOAT g, FLOAT b, FLOAT a)
 	aFloatOut[3] = a;
 }
 
-Drawing::Drawing(HWND aOutputWindow,
-								ID3D11Device* aDevice,
+Drawing::Drawing(ID3D11Device* aDevice,
 								ID3D11DeviceContext* aContext,
 								LONG aWidth,
 								LONG aHeight)
-	: mOutputWindow(aOutputWindow)
-	, mDevice(aDevice)
+	: mDevice(aDevice)
 	, mContext(aContext)
 	, mWidth(aWidth)
 	, mHeight(aHeight)

@@ -28,10 +28,28 @@ static void InitConsole()
 	freopen_s(&pFile, "CON", "w", stdout);
 }
 
+static void AttachToParentConsole()
+{
+	AttachConsole(ATTACH_PARENT_PROCESS);
+	FILE* pFile;
+	freopen_s(&pFile, "CON", "w", stdout);
+}
 
 static void ChildMain()
 {
-	exit(1);
+	printf("Initializing child\n");
+	Child child;
+	child.MessageLoop();
+	//child.Draw();
+
+	/*
+	MSG msg;
+	while (::GetMessageA(&msg, NULL, 0, 0)) {
+		::TranslateMessage(&msg);
+		::DispatchMessage(&msg);
+	}
+	*/
+	printf("Finished child\n");
 }
 
 static bool IsParent(LPWSTR aCommandLine) {
@@ -47,12 +65,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 
-	InitConsole();
 
 	if (IsParent(lpCmdLine)) {
+		InitConsole();
 		Parent parent(hInstance, nCmdShow);
 		parent.GenerateWindow();
 	} else {
+		AttachToParentConsole();
 		ChildMain();
 	}
 }

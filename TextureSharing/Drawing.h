@@ -10,8 +10,7 @@ using namespace DirectX;
 // Manages our d3d devices for us
 class Drawing {
 public:
-	Drawing(HWND aOutputWindow,
-					ID3D11Device* aDevice,
+	Drawing(ID3D11Device* aDevice,
 					ID3D11DeviceContext* aContext,
 					LONG aWidth,
 					LONG aHeight);
@@ -45,7 +44,6 @@ private:
 	// Setup D3D
 	ID3D11Device* mDevice;
 	ID3D11DeviceContext* mContext;
-	HWND mOutputWindow;
 
 	ID3D11RenderTargetView* mRenderTarget;
 	Texture* mTexture;

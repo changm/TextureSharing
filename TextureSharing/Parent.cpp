@@ -160,13 +160,18 @@ Parent::InitInstance(HINSTANCE hInstance, int nCmdShow)
 Parent::Parent(HINSTANCE aInstance, int aCmdShow)
 	: mCmdShow(aCmdShow)
 {
+	mPipe = new ServerPipe();
+	mPipe->CreateServerPipe();
 	CreateContentProcess();
+	mPipe->WaitForChild();
 }
 
 Parent::~Parent()
 {
+	mPipe->ClosePipe();
 	CloseHandle(mChildProcess.hProcess);
 	CloseHandle(mChildProcess.hThread);
+	delete mPipe;
 }
 
 void Parent::GenerateWindow()
