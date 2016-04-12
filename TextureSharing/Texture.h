@@ -18,10 +18,15 @@ public:
 		return mTextureRenderTarget;
 	}
 
+	HANDLE GetSharedHandle() {
+		return mSharedHandle;
+	}
+
 private:
 	void InitTextureRenderTarget();
 	void InitShaderResourceView();
 
+	HANDLE mSharedHandle;
 	ID3D11DeviceContext* mContext;
 	ID3D11Device* mDevice;
 	ID3D11Texture2D* mTexture;

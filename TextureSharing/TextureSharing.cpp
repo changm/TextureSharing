@@ -40,15 +40,6 @@ static void ChildMain()
 	printf("Initializing child\n");
 	Child child;
 	child.MessageLoop();
-	//child.Draw();
-
-	/*
-	MSG msg;
-	while (::GetMessageA(&msg, NULL, 0, 0)) {
-		::TranslateMessage(&msg);
-		::DispatchMessage(&msg);
-	}
-	*/
 	printf("Finished child\n");
 }
 

@@ -15,4 +15,5 @@ public:
 private:
 	DeviceManager* mDeviceManager;
 	ChildPipe* mPipe;
+	Drawing* mDraw;
 };

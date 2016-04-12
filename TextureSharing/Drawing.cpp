@@ -88,6 +88,11 @@ void Drawing::ClearRect(FLOAT* aRGBAColor)
 	//mContext->ClearRenderTargetView(mBackBufferView, aRGBAColor);
 }
 
+HANDLE Drawing::GetSharedTextureHandle()
+{
+	return mTexture->GetSharedHandle();
+}
+
 void Drawing::InitViewport()
 {
 	// D3d goes from -1, 1 and that maps to device space via the viewport.

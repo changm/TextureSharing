@@ -5,6 +5,7 @@ enum MESSAGES
 	CHILD_OPEN,
 	HANDLE_MESSAGE,
 	CLOSE,
+	CHILD_DRAW,
 };
 
 struct MessageData

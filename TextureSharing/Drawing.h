@@ -17,6 +17,7 @@ public:
 
 	// Returns the finished drawing! Only alive as long as this object is alive
 	ID3D11Texture2D* Draw();
+	HANDLE GetSharedTextureHandle();
 	~Drawing();
 
 private:

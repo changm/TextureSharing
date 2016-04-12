@@ -75,11 +75,15 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 	break;
 	case WM_DESTROY:
+	{
 		PostQuitMessage(0);
 		break;
+	}
 	default:
+	{
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
+	} // end switch
 	return 0;
 }
 
@@ -168,24 +172,65 @@ Parent::Parent(HINSTANCE aInstance, int aCmdShow)
 
 Parent::~Parent()
 {
+		// Message loop is closed after generate window
+	assert(CloseHandle(mMessageLoop));
 	mPipe->ClosePipe();
 	CloseHandle(mChildProcess.hProcess);
 	CloseHandle(mChildProcess.hThread);
 	delete mPipe;
 }
 
+void Parent::StartChildDrawing()
+{
+	MessageData draw = {
+		MESSAGES::CHILD_DRAW,
+		0,
+	};
+
+	mPipe->SendMsg(&draw);
+}
+
+void Parent::ParentMessageLoop()
+{
+	while (mPipe->ReadMsg(&mChildMessages)) {
+		switch (mChildMessages.type) {
+		case MESSAGES::HANDLE_MESSAGE:
+		{
+			printf("Got a shared handle\n");
+			break;
+		}
+		default:
+			break;
+		} // end switch
+	}
+}
+
+static DWORD PaintLoop(void* aParentInstance)
+{
+	Parent* parent = (Parent*)aParentInstance;
+	parent->StartChildDrawing();
+	parent->ParentMessageLoop();
+	return 0;
+}
+
+void Parent::CreateMessageLoopThread()
+{
+	mMessageLoop = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&PaintLoop, this, 0, NULL);
+}
+
 void Parent::GenerateWindow()
 {
+	CreateMessageLoopThread();
+
 	// These are for like "File" menu and such i guess / windows keyboard shortcuts
 	HACCEL keyBindings = LoadNativeWindow();
-
 	assert(mOutputWindow);
 	UpdateWindow(mOutputWindow);
 
 	MSG msg;
 	// Main message loop:
 	while (GetMessage(&msg, nullptr, 0, 0)) {
-	if (!TranslateAccelerator(msg.hwnd, keyBindings, &msg)) {
+		if (!TranslateAccelerator(msg.hwnd, keyBindings, &msg)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}

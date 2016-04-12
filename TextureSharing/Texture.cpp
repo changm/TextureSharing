@@ -40,6 +40,13 @@ Texture::AllocateTexture(int aWidth, int aHeight)
 	HRESULT hr = mDevice->CreateTexture2D(&bufferDesc, nullptr, &mTexture);
 	assert(hr == S_OK);
 
+	// Get a shared handle
+	IDXGIResource* sharedResource;
+	hr = mTexture->QueryInterface(__uuidof(IDXGIResource), (void**)&sharedResource);
+	assert(hr == S_OK);
+	sharedResource->GetSharedHandle(&mSharedHandle);
+	sharedResource->Release();
+
 	InitTextureRenderTarget();	// the RT wraps around the texture so that we draw to it.
 	InitShaderResourceView();
 }
