@@ -14,8 +14,7 @@
 
 using namespace DirectX;
 
-DeviceManager::DeviceManager(HWND aOutputWindow)
-	: mOutputWindow(aOutputWindow)
+DeviceManager::DeviceManager()
 {
 	InitD3D();
 	InitD2D();
@@ -23,7 +22,6 @@ DeviceManager::DeviceManager(HWND aOutputWindow)
 
 DeviceManager::~DeviceManager()
 {
-	mSwapChain->Release();
 	mDevice->Release();
 	mContext->Release();
 }
@@ -47,32 +45,27 @@ void DeviceManager::InitD3D()
 		&mDevice,
 		NULL, &mContext);
 	assert(SUCCESS(hr));
+}
 
-	RECT clientRect;
-	GetClientRect(mOutputWindow, &clientRect);
-
-	// Compute the exact client dimensions. This will be used
-	// to initialize the render targets for our swap chain.
-	mWidth = clientRect.right - clientRect.left;
-	mHeight = clientRect.bottom - clientRect.top;
-
+void DeviceManager::CreateSwapChain(IDXGISwapChain** aOutChain, LONG aWidth, LONG aHeight, HWND aOutputWindow)
+{
 	// Create the swap chain
 	DXGI_SWAP_CHAIN_DESC swapDesc;
 	memset(&swapDesc, 0, sizeof(DXGI_SWAP_CHAIN_DESC));
-	swapDesc.BufferDesc.Width = mWidth;
-	swapDesc.BufferDesc.Height = mHeight;
+	swapDesc.BufferDesc.Width = aWidth;
+	swapDesc.BufferDesc.Height = aHeight;
 	swapDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 	swapDesc.SampleDesc.Count = 1;
 	swapDesc.SampleDesc.Quality = 0;
 	swapDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	// Only 1 buffer since the desktop screen is our front buffer?
 	swapDesc.BufferCount = 1;
-	swapDesc.OutputWindow = mOutputWindow;
+	swapDesc.OutputWindow = aOutputWindow;
 	swapDesc.Windowed = TRUE;
 	swapDesc.Flags = 0;
 	swapDesc.SwapEffect = DXGI_SWAP_EFFECT_SEQUENTIAL;
 
-	hr = mFactory->CreateSwapChain(mDevice, &swapDesc, &mSwapChain);
+	HRESULT hr = mFactory->CreateSwapChain(mDevice, &swapDesc, aOutChain);
 	assert(SUCCESS(hr));
 }
 

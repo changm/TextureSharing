@@ -20,6 +20,7 @@ private:
 	void ReadTextures();
 	void CopyToBackBuffer(ID3D11Texture2D* aTexture);
 	void InitBackBuffer();
+	void InitSwapChain();
 
 	HWND mOutputWindow;
 	static Compositor* mCompositor;

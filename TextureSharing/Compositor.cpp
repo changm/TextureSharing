@@ -11,19 +11,25 @@ Compositor* Compositor::mCompositor = nullptr;
 Compositor::Compositor(HWND aOutputWindow)
 	: mOutputWindow(aOutputWindow)
 {
-	mDeviceManager = new DeviceManager(aOutputWindow);
+	RECT clientRect;
+	GetClientRect(mOutputWindow, &clientRect);
+
+	// Compute the exact client dimensions. This will be used
+	// to initialize the render targets for our swap chain.
+	mWidth = clientRect.right - clientRect.left;
+	mHeight = clientRect.bottom - clientRect.top;
+
+	mDeviceManager = new DeviceManager();
 	mContext = mDeviceManager->GetDeviceContext();
 	mDevice = mDeviceManager->GetDevice();
-	mSwapChain = mDeviceManager->GetSwapChain();
-
-	mWidth = mDeviceManager->GetBackBufferWidth();
-	mHeight = mDeviceManager->GetBackBufferHeight();
+	mDeviceManager->CreateSwapChain(&mSwapChain, mWidth, mHeight, mOutputWindow);
 
 	InitBackBuffer();
 }
 
 Compositor::~Compositor()
 {
+	mSwapChain->Release();
 	delete mDeviceManager;
 }
 

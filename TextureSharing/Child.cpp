@@ -13,5 +13,6 @@ Child::~Child()
 
 void Child::Draw()
 {
+	DeviceManager deviceManager();
 
 }
