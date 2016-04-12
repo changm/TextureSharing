@@ -13,14 +13,16 @@ public:
 	Compositor(HWND aOutputWindow);
 	~Compositor();
 
-	void Composite();
+	void Composite(HANDLE aSharedTextureHandle);
+	void CompositeSolo();
 	static Compositor* GetCompositor(HWND aOutputWindow);
+	LONG GetWidth() { return mWidth; }
+	LONG GetHeight() { return mHeight; }
 
 private:
 	void ReadTextures();
 	void CopyToBackBuffer(ID3D11Texture2D* aTexture);
 	void InitBackBuffer();
-	void InitSwapChain();
 
 	HWND mOutputWindow;
 	static Compositor* mCompositor;
@@ -55,4 +57,6 @@ private:
 	// A render target is just a wrapper around the back buffer!
 	ID3D11RenderTargetView* mBackBufferView;
 	ID3D11Texture2D* mBackBuffer;
+
+	HANDLE mSharedHandle;
 };

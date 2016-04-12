@@ -22,6 +22,9 @@ public:
 		return mSharedHandle;
 	}
 
+	void Lock();
+	void Unlock();
+
 private:
 	void InitTextureRenderTarget();
 	void InitShaderResourceView();
@@ -32,6 +35,7 @@ private:
 	ID3D11Texture2D* mTexture;
 	ID3D11RenderTargetView* mTextureRenderTarget;
 	ID3D11ShaderResourceView* mShaderResourceView; // who knows yet
+	IDXGIKeyedMutex* mMutex;
 
 	int mWidth;
 	int mHeight;

@@ -70,7 +70,7 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hWnd, &ps);
-		Compositor::GetCompositor(hWnd)->Composite();
+		Compositor::GetCompositor(hWnd)->CompositeSolo();
 		EndPaint(hWnd, &ps);
 	}
 	break;
@@ -173,7 +173,7 @@ Parent::Parent(HINSTANCE aInstance, int aCmdShow)
 Parent::~Parent()
 {
 		// Message loop is closed after generate window
-	assert(CloseHandle(mMessageLoop));
+	//assert(CloseHandle(mMessageLoop));
 	mPipe->ClosePipe();
 	CloseHandle(mChildProcess.hProcess);
 	CloseHandle(mChildProcess.hThread);
@@ -182,21 +182,29 @@ Parent::~Parent()
 
 void Parent::StartChildDrawing()
 {
-	MessageData draw = {
-		MESSAGES::CHILD_DRAW,
-		0,
-	};
+	LONG width = Compositor::GetCompositor(mOutputWindow)->GetWidth();
+	LONG height = Compositor::GetCompositor(mOutputWindow)->GetHeight();
 
+	MessageData draw = { MESSAGES::CHILD_DRAW, 0 };
+	MessageData msgWidth = { MESSAGES::WIDTH, (int) width };
+	MessageData msgHeight = { MESSAGES::HEIGHT, (int) height };
+	MessageData initDraw = { MESSAGES::INIT_DRAW, 0 };
+
+	mPipe->SendMsg(&msgWidth);
+	mPipe->SendMsg(&msgHeight);
+	mPipe->SendMsg(&initDraw);
 	mPipe->SendMsg(&draw);
 }
 
 void Parent::ParentMessageLoop()
 {
+	// Happens on another thread
 	while (mPipe->ReadMsg(&mChildMessages)) {
 		switch (mChildMessages.type) {
 		case MESSAGES::HANDLE_MESSAGE:
 		{
-			printf("Got a shared handle\n");
+			HANDLE sharedTextureHandle = (HANDLE) mChildMessages.data;
+			Compositor::GetCompositor(mOutputWindow)->Composite(sharedTextureHandle);
 			break;
 		}
 		default:
@@ -220,12 +228,13 @@ void Parent::CreateMessageLoopThread()
 
 void Parent::GenerateWindow()
 {
-	CreateMessageLoopThread();
-
 	// These are for like "File" menu and such i guess / windows keyboard shortcuts
 	HACCEL keyBindings = LoadNativeWindow();
 	assert(mOutputWindow);
 	UpdateWindow(mOutputWindow);
+
+	// Don't create he message loop thread until we create the window
+	CreateMessageLoopThread();
 
 	MSG msg;
 	// Main message loop:

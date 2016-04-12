@@ -216,11 +216,42 @@ Compositor::CopyToBackBuffer(ID3D11Texture2D* aTexture)
 }
 
 void
-Compositor::Composite()
+Compositor::CompositeSolo()
 {
+	/*
+	if (!mSharedHandle) {
+		return;
+	}
+	Composite(mSharedHandle);
+	*/
+	/*
 	Drawing draw(mDevice, mContext, mWidth, mHeight);
-	ID3D11Texture2D* result = draw.Draw();
-	//CopyToBackBuffer(result);
-	DrawViaTextureShaders(result);
+	ID3D11Texture2D* texture = draw.Draw();
+	CopyToBackBuffer(texture);
+	mSwapChain->Present(0, 0);
+	*/
+	Composite(mSharedHandle);
+}
+
+void
+Compositor::Composite(HANDLE aSharedTextureHandle)
+{
+	mSharedHandle = aSharedTextureHandle;
+	if (!mSharedHandle) { return; }
+
+	ID3D11Texture2D* sharedTexture;
+	HRESULT hr = mDevice->OpenSharedResource(aSharedTextureHandle, __uuidof(ID3D11Texture2D), (void**)&sharedTexture);
+	assert(SUCCESS(hr));
+
+	/*
+	IDXGIKeyedMutex* mutex;
+	sharedTexture->QueryInterface(__uuidof(IDXGIKeyedMutex), (void**)&mutex);
+	hr = mutex->AcquireSync(0, 10000);
+	assert(SUCCESS(hr));
+	*/
+
+	CopyToBackBuffer(sharedTexture);
+	//mutex->ReleaseSync(0);
+
 	mSwapChain->Present(0, 0);
 }

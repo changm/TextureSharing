@@ -20,6 +20,21 @@ Texture::~Texture()
 }
 
 void
+Texture::Lock()
+{
+	mTexture->QueryInterface(__uuidof(IDXGIKeyedMutex), (void**)&mMutex);
+	HRESULT hr = mMutex->AcquireSync(0, 10000);
+	assert(SUCCESS(hr));
+}
+
+void
+Texture::Unlock()
+{
+	HRESULT hr = mMutex->ReleaseSync(0);
+	assert(SUCCESS(hr));
+}
+
+void
 Texture::AllocateTexture(int aWidth, int aHeight)
 {
 	assert(aWidth);
@@ -36,6 +51,7 @@ Texture::AllocateTexture(int aWidth, int aHeight)
 
 	// Shared w/o a mutex
 	bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
+	//bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
 
 	HRESULT hr = mDevice->CreateTexture2D(&bufferDesc, nullptr, &mTexture);
 	assert(hr == S_OK);

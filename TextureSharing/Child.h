@@ -16,4 +16,7 @@ private:
 	DeviceManager* mDeviceManager;
 	ChildPipe* mPipe;
 	Drawing* mDraw;
+
+	LONG mWidth;
+	LONG mHeight;
 };

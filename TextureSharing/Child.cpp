@@ -10,10 +10,7 @@ Child::Child()
 	mPipe->ConnectToServerPipe();
 
 	mDeviceManager = new DeviceManager();;
-	LONG width = 500;
-	LONG height = 500;
 
-	mDraw = new Drawing(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), width,  height);
 }
 
 Child::~Child()
@@ -30,6 +27,21 @@ void Child::MessageLoop()
 	{
 		switch(msg.type)
 		{
+		case MESSAGES::WIDTH:
+		{
+			mWidth = (LONG) msg.data;
+			break;
+		}
+		case MESSAGES::HEIGHT:
+		{
+			mHeight = (LONG) msg.data;
+			break;
+		}
+		case MESSAGES::INIT_DRAW:
+		{
+			mDraw = new Drawing(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), mWidth, mHeight);
+			break;
+		}
 		case MESSAGES::CLOSE:
 			return;
 		case MESSAGES::CHILD_DRAW:

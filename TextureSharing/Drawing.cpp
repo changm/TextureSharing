@@ -40,18 +40,20 @@ Drawing::Drawing(ID3D11Device* aDevice,
 	
 	InitMatrices();
 	UpdateConstantBuffers();
-
 	CompileShaders();
 }
 
 Drawing::~Drawing()
 {
+	printf("Killing drawing\n");
 	mVertexShader->Release();
 	mPixelShader->Release();
 	mDevice->Release();
 	mContext->Release();
-	mVertexBuffer->Release();
-	mIndexBuffer->Release();
+	if (mVertexBuffer) {
+		mVertexBuffer->Release();
+		mIndexBuffer->Release();
+	}
 	delete mTexture;
 }
 
@@ -85,7 +87,7 @@ void Drawing::CompileShaders()
 
 void Drawing::ClearRect(FLOAT* aRGBAColor)
 {
-	//mContext->ClearRenderTargetView(mBackBufferView, aRGBAColor);
+	mContext->ClearRenderTargetView(mTexture->GetRenderTargetView(), aRGBAColor);
 }
 
 HANDLE Drawing::GetSharedTextureHandle()
@@ -254,10 +256,22 @@ Drawing::SetInputLayout()
 
 ID3D11Texture2D* Drawing::Draw()
 {
+	/*
+	//mTexture->Lock();
 	UploadVertices();
 	SetInputLayout();
 	int indexCount = SetIndexBuffers();
 
 	mContext->DrawIndexed(indexCount, 0, 0);
+	//mTexture->Unlock();
+	return mTexture->GetTexture();
+	*/
+
+	FLOAT red[4];
+	red[0] = 255;
+	red[1] = 0;
+	red[2] = 0;
+	red[3] = 0;
+	ClearRect(red);
 	return mTexture->GetTexture();
 }

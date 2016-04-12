@@ -6,6 +6,9 @@ enum MESSAGES
 	HANDLE_MESSAGE,
 	CLOSE,
 	CHILD_DRAW,
+	WIDTH,
+	HEIGHT,
+	INIT_DRAW,
 };
 
 struct MessageData
