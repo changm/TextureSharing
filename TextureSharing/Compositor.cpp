@@ -6,6 +6,7 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #include "Drawing.h"
+#include <stdio.h>
 
 Compositor* Compositor::mCompositor = nullptr;
 Compositor::Compositor(HWND aOutputWindow)
@@ -223,7 +224,7 @@ Compositor::CompositeSolo()
 		return;
 	}
 	Composite(mSharedHandle);
-	*/
+	/*
 	Drawing draw(mDevice, mContext, mWidth, mHeight);
 	ID3D11Texture2D* texture = draw.Draw();
 	draw.Lock();
@@ -231,28 +232,27 @@ Compositor::CompositeSolo()
 	draw.Unlock();
 	mSwapChain->Present(0, 0);
 	//Composite(mSharedHandle);
+	*/
 }
 
 void
 Compositor::Composite(HANDLE aSharedTextureHandle)
 {
-	/*
 	mSharedHandle = aSharedTextureHandle;
 	if (!mSharedHandle) { return; }
 
+	printf("Copying to shared texture\n");
 	ID3D11Texture2D* sharedTexture;
 	HRESULT hr = mDevice->OpenSharedResource(aSharedTextureHandle, __uuidof(ID3D11Texture2D), (void**)&sharedTexture);
 	assert(SUCCESS(hr));
 
-	/*
 	IDXGIKeyedMutex* mutex;
 	sharedTexture->QueryInterface(__uuidof(IDXGIKeyedMutex), (void**)&mutex);
 	hr = mutex->AcquireSync(0, 10000);
 	assert(SUCCESS(hr));
-	*/
 
-	//CopyToBackBuffer(sharedTexture);
-	//mutex->ReleaseSync(0);
+	CopyToBackBuffer(sharedTexture);
+	mutex->ReleaseSync(0);
 
-	//mSwapChain->Present(0, 0);
+	mSwapChain->Present(0, 0);
 }
