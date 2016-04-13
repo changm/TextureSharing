@@ -50,8 +50,8 @@ Texture::AllocateTexture(int aWidth, int aHeight)
 																		1, 1, bindFlags);
 
 	// Shared w/o a mutex
-	bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
-	//bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
+	//bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
+	bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
 
 	HRESULT hr = mDevice->CreateTexture2D(&bufferDesc, nullptr, &mTexture);
 	assert(hr == S_OK);
@@ -71,11 +71,14 @@ void
 Texture::Deallocate()
 {
 	if (mTexture) {
+		Lock();
 		printf("Deallocating texture\n");
 		mTexture->Release();
 		mTextureRenderTarget->Release();
 		mShaderResourceView->Release();
 		mDevice->Release();
+		Unlock();
+		mMutex->Release();
 	}
 }
 

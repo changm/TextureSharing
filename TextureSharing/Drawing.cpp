@@ -48,12 +48,11 @@ Drawing::~Drawing()
 	printf("Killing drawing\n");
 	mVertexShader->Release();
 	mPixelShader->Release();
-	mDevice->Release();
-	mContext->Release();
 	if (mVertexBuffer) {
 		mVertexBuffer->Release();
 		mIndexBuffer->Release();
 	}
+	mTexture->Unlock();
 	delete mTexture;
 }
 
@@ -267,6 +266,7 @@ ID3D11Texture2D* Drawing::Draw()
 	return mTexture->GetTexture();
 	*/
 
+	mTexture->Lock();
 	FLOAT red[4];
 	red[0] = 255;
 	red[1] = 0;
