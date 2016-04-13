@@ -77,19 +77,15 @@ void
 Texture::Deallocate()
 {
 	if (mTexture) {
-		Lock();
 		printf("Deallocating texture\n");
 		mTexture->Release();
 		mTextureRenderTarget->Release();
 		mShaderResourceView->Release();
 		mDevice->Release();
-		Unlock();
 
-		/*
 		if (mMutex) {
 			mMutex->Release();
 		}
-		*/
 	}
 }
 

@@ -35,15 +35,11 @@ Drawing::Drawing(ID3D11Device* aDevice,
 	, mHeight(aHeight)
 {
 	InitTexture();
-
 	InitViewport();
-	SetRenderTarget();
-	
 	InitMatrices();
+
 	UpdateConstantBuffers();
 	CompileShaders();
-
-	SetRenderTarget();
 }
 
 Drawing::~Drawing()
@@ -271,17 +267,20 @@ ID3D11Texture2D* Drawing::Draw()
 	int indexCount = SetIndexBuffers();
 
 	Lock();
+	SetRenderTarget();	// Anytime we access mTexture, we have to lock
 	mContext->DrawIndexed(indexCount, 0, 0);
 	Unlock();
 	return mTexture->GetTexture();
 
 	/*
+	Lock();
 	FLOAT red[4];
 	red[0] = 255;
 	red[1] = 0;
 	red[2] = 0;
 	red[3] = 0;
 	ClearRect(red);
+	Unlock();
 	return mTexture->GetTexture();
 	*/
 }
