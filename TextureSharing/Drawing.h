@@ -14,10 +14,7 @@ public:
 					ID3D11DeviceContext* aContext);
 
 	// Draws to this texture
-	void Draw(Texture* aTexture);
-
-	// Returns the finished drawing! Only alive as long as this object is alive
-	ID3D11Texture2D* Draw();
+	void Draw(Texture* aTexture, FLOAT* aColor);
 	~Drawing();
 
 private:
@@ -26,7 +23,7 @@ private:
 	void InitViewport(Texture* aTexture);
 	void UpdateConstantBuffers();
 	void InitMatrices(Texture* aTexture);
-	void UploadVertices();
+	void UploadVertices(FLOAT* aColor);
 	void SetInputLayout();
 	int SetIndexBuffers();
 

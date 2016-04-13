@@ -211,9 +211,30 @@ Compositor::InitBackBuffer()
 }
 
 void
-Compositor::CopyToBackBuffer(ID3D11Texture2D* aTexture)
+Compositor::CopyToBackBuffer(Texture* aTexture)
 {
-	mContext->CopyResource(mBackBuffer, aTexture);
+	aTexture->Lock();
+	mContext->CopyResource(mBackBuffer, aTexture->GetTexture());
+	aTexture->Unlock();
+}
+
+// Since the incoming numbers are FLOATS, the values are actually 0-1, not 0-255
+static void InitColor(FLOAT* aFloatOut, FLOAT r, FLOAT g, FLOAT b, FLOAT a)
+{
+	aFloatOut[0] = r;
+	aFloatOut[1] = g;
+	aFloatOut[2] = b;
+	aFloatOut[3] = a;
+}
+
+void
+Compositor::InitColors(FLOAT aColors[][4], int aCount)
+{
+	InitColor(aColors[0], 1, 0, 0, 1);
+	InitColor(aColors[1], 0, 1, 0, 1);
+	InitColor(aColors[2], 0, 0, 1, 1);
+	InitColor(aColors[3], 1, 1, 0, 1);
+	InitColor(aColors[4], 1, 0, 1, 1);
 }
 
 void
@@ -225,8 +246,28 @@ Compositor::CompositeSolo()
 	}
 	Composite(mSharedHandle);
 	*/
-	Texture* texture = Texture::AllocateTexture(mDevice, mContext, mWidth, mHeight);
+	const int size = 5;
+	FLOAT colors[5][4];
+	Texture* textures[5];
+	InitColors(colors, size);
+
 	Drawing drawing(mDevice, mContext);
+
+	for (int i = 0; i < 5; i++) {
+		textures[i] = Texture::AllocateTexture(mDevice, mContext, mWidth, mHeight);
+		drawing.Draw(textures[i], colors[i]);
+	}
+
+	CopyToBackBuffer(textures[3]);
+	mSwapChain->Present(0, 0);
+
+	for (int i = 0; i < 5; i++) {
+		delete textures[i];
+	}
+
+	/*
+	Texture* texture = Texture::AllocateTexture(mDevice, mContext, mWidth, mHeight);
+	
 	drawing.Draw(texture);
 
 	texture->Lock();
@@ -234,6 +275,7 @@ Compositor::CompositeSolo()
 	texture->Unlock();
 	mSwapChain->Present(0, 0);
 	delete texture;
+	*/
 }
 
 void

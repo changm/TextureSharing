@@ -16,15 +16,6 @@
 
 using namespace DirectX;
 
-// Since the incoming numbers are FLOATS, the values are actually 0-1, not 0-255
-static void InitColor(FLOAT* aFloatOut, FLOAT r, FLOAT g, FLOAT b, FLOAT a)
-{
-	aFloatOut[0] = r;
-	aFloatOut[1] = g;
-	aFloatOut[2] = b;
-	aFloatOut[3] = a;
-}
-
 Drawing::Drawing(ID3D11Device* aDevice,
 								ID3D11DeviceContext* aContext)
 	: mDevice(aDevice)
@@ -147,7 +138,7 @@ void Drawing::UpdateConstantBuffers()
 }
 
 // let's try a square
-static VertexPosColor vertices[] =
+static VertexPosColor refVertices[] =
 {
 	{ XMFLOAT3(-1, -1, 0), XMFLOAT3(1, 1, 1) }, // bottom left
 	{ XMFLOAT3(-1, 1, 0), XMFLOAT3(1, 1, 1) },	// top left
@@ -183,11 +174,16 @@ int Drawing::SetIndexBuffers()
 	return indexCount;
 }
 
-void Drawing::UploadVertices()
+void Drawing::UploadVertices(FLOAT* aColor)
 {
 		// Now we create a buffer for our triangle
 	D3D11_BUFFER_DESC bufferDesc;
 	memset(&bufferDesc, 0, sizeof(bufferDesc));
+
+	VertexPosColor vertices[4];
+	for (int i = 0; i < 4; i++) {
+		vertices[i] = { refVertices[i].Position, XMFLOAT3(aColor[0], aColor[1], aColor[2]) };
+	}
 
 	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	bufferDesc.ByteWidth = sizeof(VertexPosColor) * _countof(vertices);	// Because we have 3 vertices
@@ -230,7 +226,7 @@ Drawing::SetInputLayout()
 	mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-void Drawing::Draw(Texture* aTexture) {
+void Drawing::Draw(Texture* aTexture, FLOAT* aColor) {
 	aTexture->Lock();
 	SetRenderTarget(aTexture);
 	InitViewport(aTexture);
@@ -239,7 +235,7 @@ void Drawing::Draw(Texture* aTexture) {
 	UpdateConstantBuffers();
 	CompileShaders();
 
-	UploadVertices();
+	UploadVertices(aColor);
 	SetInputLayout();
 	int indexCount = SetIndexBuffers();
 	mContext->DrawIndexed(indexCount, 0, 0);

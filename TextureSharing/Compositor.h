@@ -21,8 +21,9 @@ public:
 
 private:
 	void ReadTextures();
-	void CopyToBackBuffer(ID3D11Texture2D* aTexture);
+	void CopyToBackBuffer(Texture* aTexture);
 	void InitBackBuffer();
+	void InitColors(FLOAT aColors[][4], int aCount);
 
 	HWND mOutputWindow;
 	static Compositor* mCompositor;

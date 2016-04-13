@@ -56,7 +56,14 @@ void Child::MessageLoop()
 void Child::Draw()
 {
 	Texture* targetTexture = Texture::AllocateTexture(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), mWidth, mHeight);
-	mDraw->Draw(targetTexture);
+
+	FLOAT red[4];
+	red[0] = 1;
+	red[1] = 0;
+	red[2] = 0;
+	red[3] = 0;
+
+	mDraw->Draw(targetTexture, red);
 	HANDLE sharedTexture = targetTexture->GetSharedHandle();
 
 	MessageData sharedHandle = {
