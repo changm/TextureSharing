@@ -99,7 +99,7 @@ void Drawing::InitMatrices(Texture* aTexture)
 	mWorldMatrix = XMMatrixIdentity();
 
 	// view matrix is basically telling the camera where to look
-	XMVECTOR eyePosition = XMVectorSet(0, 0, -5, 1); // look -5 away for the camera
+	XMVECTOR eyePosition = XMVectorSet(0, 0, -1, 1); // look -5 away for the camera
 	XMVECTOR focusPoint = XMVectorSet(0, 0, 0, 1);	// Look at the origin
 	XMVECTOR upDirection = XMVectorSet(0, 1, 0, 0);	// Set up to the the Y axis, notice W is 0 here.
 	mViewMatrix = XMMatrixLookAtLH(eyePosition, focusPoint, upDirection);

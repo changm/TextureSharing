@@ -230,11 +230,13 @@ static void InitColor(FLOAT* aFloatOut, FLOAT r, FLOAT g, FLOAT b, FLOAT a)
 void
 Compositor::InitColors(FLOAT aColors[][4], int aCount)
 {
+	assert(aCount == 6);
 	InitColor(aColors[0], 1, 0, 0, 1);
 	InitColor(aColors[1], 0, 1, 0, 1);
 	InitColor(aColors[2], 0, 0, 1, 1);
 	InitColor(aColors[3], 1, 1, 0, 1);
 	InitColor(aColors[4], 1, 0, 1, 1);
+	InitColor(aColors[5], 0.5, 0.5, 0.5, 1);
 }
 
 void
@@ -246,22 +248,22 @@ Compositor::CompositeSolo()
 	}
 	Composite(mSharedHandle);
 	*/
-	const int size = 5;
-	FLOAT colors[5][4];
-	Texture* textures[5];
+	const int size = 6;
+	FLOAT colors[size][4];
+	Texture* textures[size];
 	InitColors(colors, size);
 
 	Drawing drawing(mDevice, mContext);
 
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < size; i++) {
 		textures[i] = Texture::AllocateTexture(mDevice, mContext, mWidth, mHeight);
 		drawing.Draw(textures[i], colors[i]);
 	}
 
-	CopyToBackBuffer(textures[3]);
+	CopyToBackBuffer(textures[5]);
 	mSwapChain->Present(0, 0);
 
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < size; i++) {
 		delete textures[i];
 	}
 
