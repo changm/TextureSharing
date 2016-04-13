@@ -91,6 +91,12 @@ void Drawing::CompileShaders()
 	mContext->PSSetShader(mPixelShader, 0, 0);
 }
 
+void Drawing::Draw(Texture* aTexture) {
+	aTexture->Lock();
+
+	aTexture->Unlock();
+}
+
 void Drawing::ClearRect(FLOAT* aRGBAColor)
 {
 	mContext->ClearRenderTargetView(mTexture->GetRenderTargetView(), aRGBAColor);
@@ -115,9 +121,9 @@ void Drawing::InitViewport()
 }
 
 void
-Drawing::SetRenderTarget()
+Drawing::SetRenderTarget(Texture* aTexture)
 {
-	ID3D11RenderTargetView* textureView = mTexture->GetRenderTargetView();
+	ID3D11RenderTargetView* textureView = aTexture->GetRenderTargetView();
 	mContext->OMSetRenderTargets(1, &textureView, NULL);
 }
 
@@ -125,8 +131,7 @@ void Drawing::InitTexture()
 {
 	assert(mDevice);
 	assert(mContext);
-	mTexture = new Texture(mDevice, mContext);
-	mTexture->AllocateTexture(mWidth, mHeight);
+	mTexture = Texture::AllocateTexture(mDevice, mContext, mWidth, mHeight);
 }
 
 struct VertexPosColor
@@ -267,7 +272,7 @@ ID3D11Texture2D* Drawing::Draw()
 	int indexCount = SetIndexBuffers();
 
 	Lock();
-	SetRenderTarget();	// Anytime we access mTexture, we have to lock
+	SetRenderTarget(mTexture);	// Anytime we access mTexture, we have to lock
 	mContext->DrawIndexed(indexCount, 0, 0);
 	Unlock();
 	return mTexture->GetTexture();

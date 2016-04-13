@@ -185,7 +185,7 @@ Compositor::DrawViaTextureShaders(ID3D11Texture2D* aTexture)
 	// Tell the GPU we just have a list of triangles
 	mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	// Finally draw the 3 vertices we have
+	// Finally draw the 6 vertices we have
 	int indexCount = 6;
 	mContext->DrawIndexed(indexCount, 0, 0);
 }

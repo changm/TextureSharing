@@ -15,6 +15,9 @@ public:
 					LONG aWidth,
 					LONG aHeight);
 
+	// Draws to this texture
+	void Draw(Texture* aTexture);
+
 	// Returns the finished drawing! Only alive as long as this object is alive
 	ID3D11Texture2D* Draw();
 	HANDLE GetSharedTextureHandle();
@@ -24,7 +27,7 @@ public:
 
 private:
 	// Init all the things
-	void SetRenderTarget();
+	void SetRenderTarget(Texture* aTexture);
 	void InitTexture();
 	void InitViewport();
 	void UpdateConstantBuffers();

@@ -180,7 +180,7 @@ Parent::~Parent()
 	delete mPipe;
 }
 
-void Parent::StartChildDrawing()
+void Parent::SendDraw()
 {
 	LONG width = Compositor::GetCompositor(mOutputWindow)->GetWidth();
 	LONG height = Compositor::GetCompositor(mOutputWindow)->GetHeight();
@@ -192,6 +192,7 @@ void Parent::StartChildDrawing()
 
 	mPipe->SendMsg(&msgWidth);
 	mPipe->SendMsg(&msgHeight);
+
 	mPipe->SendMsg(&initDraw);
 	mPipe->SendMsg(&draw);
 }
@@ -216,7 +217,7 @@ void Parent::ParentMessageLoop()
 static DWORD PaintLoop(void* aParentInstance)
 {
 	Parent* parent = (Parent*)aParentInstance;
-	parent->StartChildDrawing();
+	parent->SendDraw();
 	parent->ParentMessageLoop();
 	return 0;
 }

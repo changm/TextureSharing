@@ -5,18 +5,19 @@
 #include <d3d11.h>
 #include <assert.h>
 
-Texture::Texture(ID3D11Device* aDevice, ID3D11DeviceContext* aDeviceContext)
-	: mDevice(aDevice)
-	, mContext(aDeviceContext)
+Texture::Texture()
 {
-	assert(mDevice);
-	mDevice->AddRef();
-	mContext->AddRef();
 }
 
 Texture::~Texture()
 {
-	Deallocate();
+	mTexture->Release();
+	mTextureRenderTarget->Release();
+	mShaderResourceView->Release();
+
+	if (mMutex) {
+		mMutex->Release();
+	}
 }
 
 void
@@ -40,57 +41,40 @@ Texture::Unlock()
 	}
 }
 
-void
-Texture::AllocateTexture(int aWidth, int aHeight)
+/* static */ Texture*
+Texture::AllocateTexture(ID3D11Device* aDevice, ID3D11DeviceContext* aContext, int aWidth, int aHeight)
 {
 	assert(aWidth);
 	assert(aHeight);
-	mWidth = aWidth;
-	mHeight = aHeight;
+	Texture* texture = new Texture();
 
 	// This is only because our d2d backend does this see:
 	// https://dxr.mozilla.org/mozilla-central/source/gfx/layers/d3d11/TextureD3D11.cpp#357
 	UINT bindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-
-	CD3D11_TEXTURE2D_DESC bufferDesc(DXGI_FORMAT_B8G8R8A8_UNORM, mWidth, mHeight,
+	CD3D11_TEXTURE2D_DESC bufferDesc(DXGI_FORMAT_B8G8R8A8_UNORM, aWidth, aHeight,
 																		1, 1, bindFlags);
 
 	// Shared w/o a mutex
 	//bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
 	bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
 
-	HRESULT hr = mDevice->CreateTexture2D(&bufferDesc, nullptr, &mTexture);
+	HRESULT hr = aDevice->CreateTexture2D(&bufferDesc, nullptr, &texture->mTexture);
 	assert(hr == S_OK);
 
 	// Get a shared handle
 	IDXGIResource* sharedResource;
-	hr = mTexture->QueryInterface(__uuidof(IDXGIResource), (void**)&sharedResource);
+	hr = texture->mTexture->QueryInterface(__uuidof(IDXGIResource), (void**)&sharedResource);
 	assert(hr == S_OK);
-	sharedResource->GetSharedHandle(&mSharedHandle);
+	sharedResource->GetSharedHandle(&texture->mSharedHandle);
 	sharedResource->Release();
 
-	InitTextureRenderTarget();	// the RT wraps around the texture so that we draw to it.
-	InitShaderResourceView();
+	texture->InitShaderResourceView(aDevice);
+	texture->InitTextureRenderTarget(aDevice);
+	return texture;
 }
 
 void
-Texture::Deallocate()
-{
-	if (mTexture) {
-		printf("Deallocating texture\n");
-		mTexture->Release();
-		mTextureRenderTarget->Release();
-		mShaderResourceView->Release();
-		mDevice->Release();
-
-		if (mMutex) {
-			mMutex->Release();
-		}
-	}
-}
-
-void
-Texture::InitShaderResourceView()
+Texture::InitShaderResourceView(ID3D11Device* aDevice)
 {
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderViewDesc;
 	memset(&shaderViewDesc, 0, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
@@ -98,12 +82,12 @@ Texture::InitShaderResourceView()
 	shaderViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	shaderViewDesc.Texture2D.MipLevels = 1;
 	shaderViewDesc.Texture2D.MostDetailedMip = 0;
-	HRESULT result = mDevice->CreateShaderResourceView(mTexture, &shaderViewDesc, &mShaderResourceView);
+	HRESULT result = aDevice->CreateShaderResourceView(mTexture, &shaderViewDesc, &mShaderResourceView);
 	assert(result == S_OK);
 }
 
 void
-Texture::InitTextureRenderTarget()
+Texture::InitTextureRenderTarget(ID3D11Device* aDevice)
 {
 	printf("Init texture render target\n");
 	D3D11_RENDER_TARGET_VIEW_DESC renderTargetDesc;
@@ -112,6 +96,6 @@ Texture::InitTextureRenderTarget()
 	renderTargetDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	renderTargetDesc.Texture2D.MipSlice = 0;
 
-	HRESULT hr = mDevice->CreateRenderTargetView(mTexture, &renderTargetDesc, &mTextureRenderTarget);
+	HRESULT hr = aDevice->CreateRenderTargetView(mTexture, &renderTargetDesc, &mTextureRenderTarget);
 	assert(hr == S_OK);
 }

@@ -11,8 +11,8 @@ public:
 	~Parent();
 
 	void GenerateWindow();
-	void StartChildDrawing();
 	void ParentMessageLoop();
+	void SendDraw();
 
 private:
 	void CreateContentProcess();
