@@ -5,7 +5,9 @@
 #include <d3d11.h>
 #include <assert.h>
 
-Texture::Texture()
+Texture::Texture(LONG aWidth, LONG aHeight)
+	: mWidth(aWidth)
+	, mHeight(aHeight)
 {
 }
 
@@ -42,11 +44,11 @@ Texture::Unlock()
 }
 
 /* static */ Texture*
-Texture::AllocateTexture(ID3D11Device* aDevice, ID3D11DeviceContext* aContext, int aWidth, int aHeight)
+Texture::AllocateTexture(ID3D11Device* aDevice, ID3D11DeviceContext* aContext, LONG aWidth, LONG aHeight)
 {
 	assert(aWidth);
 	assert(aHeight);
-	Texture* texture = new Texture();
+	Texture* texture = new Texture(aWidth, aHeight);
 
 	// This is only because our d2d backend does this see:
 	// https://dxr.mozilla.org/mozilla-central/source/gfx/layers/d3d11/TextureD3D11.cpp#357

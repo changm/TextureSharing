@@ -5,10 +5,10 @@
 class Texture
 {
 public:
-	Texture();
+	Texture(LONG aWidth, LONG aHeight);
 	~Texture();
 
-	static Texture* AllocateTexture(ID3D11Device* aDevice, ID3D11DeviceContext* aContext, int aWidth, int aHeight);
+	static Texture* AllocateTexture(ID3D11Device* aDevice, ID3D11DeviceContext* aContext, LONG aWidth, LONG aHeight);
 	ID3D11Texture2D* GetTexture() {
 		return mTexture;
 	}
@@ -23,6 +23,9 @@ public:
 
 	void Lock();
 	void Unlock();
+	LONG GetWidth() { return mWidth; }
+	LONG GetHeight() { return mHeight; }
+
 
 private:
 	void InitTextureRenderTarget(ID3D11Device* aDevice);
@@ -33,4 +36,7 @@ private:
 	ID3D11RenderTargetView* mTextureRenderTarget;
 	ID3D11ShaderResourceView* mShaderResourceView; // who knows yet
 	IDXGIKeyedMutex* mMutex;
+
+	LONG mWidth;
+	LONG mHeight;
 };

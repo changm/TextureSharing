@@ -39,7 +39,7 @@ void Child::MessageLoop()
 		}
 		case MESSAGES::INIT_DRAW:
 		{
-			mDraw = new Drawing(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), mWidth, mHeight);
+			mDraw = new Drawing(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext());
 			break;
 		}
 		case MESSAGES::CLOSE:
@@ -55,8 +55,9 @@ void Child::MessageLoop()
 
 void Child::Draw()
 {
-	ID3D11Texture2D* drawnTexture = mDraw->Draw();
-	HANDLE sharedTexture = mDraw->GetSharedTextureHandle();
+	Texture* targetTexture = Texture::AllocateTexture(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), mWidth, mHeight);
+	mDraw->Draw(targetTexture);
+	HANDLE sharedTexture = targetTexture->GetSharedHandle();
 
 	MessageData sharedHandle = {
 		MESSAGES::HANDLE_MESSAGE,

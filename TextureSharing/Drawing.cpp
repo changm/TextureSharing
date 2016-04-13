@@ -26,20 +26,10 @@ static void InitColor(FLOAT* aFloatOut, FLOAT r, FLOAT g, FLOAT b, FLOAT a)
 }
 
 Drawing::Drawing(ID3D11Device* aDevice,
-								ID3D11DeviceContext* aContext,
-								LONG aWidth,
-								LONG aHeight)
+								ID3D11DeviceContext* aContext)
 	: mDevice(aDevice)
 	, mContext(aContext)
-	, mWidth(aWidth)
-	, mHeight(aHeight)
 {
-	InitTexture();
-	InitViewport();
-	InitMatrices();
-
-	UpdateConstantBuffers();
-	CompileShaders();
 }
 
 Drawing::~Drawing()
@@ -50,17 +40,6 @@ Drawing::~Drawing()
 		mVertexBuffer->Release();
 		mIndexBuffer->Release();
 	}
-	delete mTexture;
-}
-
-void Drawing::Lock()
-{
-	mTexture->Lock();
-}
-
-void Drawing::Unlock()
-{
-	mTexture->Unlock();
 }
 
 void Drawing::CompileShaders()
@@ -91,29 +70,20 @@ void Drawing::CompileShaders()
 	mContext->PSSetShader(mPixelShader, 0, 0);
 }
 
-void Drawing::Draw(Texture* aTexture) {
-	aTexture->Lock();
-
-	aTexture->Unlock();
-}
-
+/*
 void Drawing::ClearRect(FLOAT* aRGBAColor)
 {
 	mContext->ClearRenderTargetView(mTexture->GetRenderTargetView(), aRGBAColor);
 }
+*/
 
-HANDLE Drawing::GetSharedTextureHandle()
-{
-	return mTexture->GetSharedHandle();
-}
-
-void Drawing::InitViewport()
+void Drawing::InitViewport(Texture* aTexture)
 {
 	// D3d goes from -1, 1 and that maps to device space via the viewport.
 	D3D11_VIEWPORT viewport;
 	memset(&viewport, 0, sizeof(D3D11_VIEWPORT));
-	viewport.Width = mWidth;
-	viewport.Height = mHeight;
+	viewport.Width = aTexture->GetWidth();
+	viewport.Height = aTexture->GetHeight();
 	viewport.TopLeftX = 0;
 	viewport.TopLeftY = 0;
 
@@ -127,20 +97,13 @@ Drawing::SetRenderTarget(Texture* aTexture)
 	mContext->OMSetRenderTargets(1, &textureView, NULL);
 }
 
-void Drawing::InitTexture()
-{
-	assert(mDevice);
-	assert(mContext);
-	mTexture = Texture::AllocateTexture(mDevice, mContext, mWidth, mHeight);
-}
-
 struct VertexPosColor
 {
 	XMFLOAT3 Position;
 	XMFLOAT3 Color;
 };
 
-void Drawing::InitMatrices()
+void Drawing::InitMatrices(Texture* aTexture)
 {
 	mWorldMatrix = XMMatrixIdentity();
 
@@ -153,7 +116,9 @@ void Drawing::InitMatrices()
 	// Projection matrix takes things in the -1..1 space and puts it onto the viewport
 	// Compute the exact client dimensions. This will be used
 	// to initialize the render targets for our swap chain.
-	mProjectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(90.0f), mWidth / mHeight, 0.1f, 100.0f);
+	mProjectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(90.0f),
+																							 (float) aTexture->GetWidth() / (float) aTexture->GetHeight(),
+																							 0.1f, 100.0f);
 }
 
 void Drawing::UpdateConstantBuffers()
@@ -265,27 +230,18 @@ Drawing::SetInputLayout()
 	mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-ID3D11Texture2D* Drawing::Draw()
-{
+void Drawing::Draw(Texture* aTexture) {
+	aTexture->Lock();
+	SetRenderTarget(aTexture);
+	InitViewport(aTexture);
+	InitMatrices(aTexture);
+
+	UpdateConstantBuffers();
+	CompileShaders();
+
 	UploadVertices();
 	SetInputLayout();
 	int indexCount = SetIndexBuffers();
-
-	Lock();
-	SetRenderTarget(mTexture);	// Anytime we access mTexture, we have to lock
 	mContext->DrawIndexed(indexCount, 0, 0);
-	Unlock();
-	return mTexture->GetTexture();
-
-	/*
-	Lock();
-	FLOAT red[4];
-	red[0] = 255;
-	red[1] = 0;
-	red[2] = 0;
-	red[3] = 0;
-	ClearRect(red);
-	Unlock();
-	return mTexture->GetTexture();
-	*/
+	aTexture->Unlock();
 }

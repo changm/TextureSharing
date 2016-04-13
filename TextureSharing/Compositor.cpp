@@ -224,20 +224,22 @@ Compositor::CompositeSolo()
 		return;
 	}
 	Composite(mSharedHandle);
-	/*
-	Drawing draw(mDevice, mContext, mWidth, mHeight);
-	ID3D11Texture2D* texture = draw.Draw();
-	draw.Lock();
-	CopyToBackBuffer(texture);
-	draw.Unlock();
-	mSwapChain->Present(0, 0);
-	//Composite(mSharedHandle);
 	*/
+	Texture* texture = Texture::AllocateTexture(mDevice, mContext, mWidth, mHeight);
+	Drawing drawing(mDevice, mContext);
+	drawing.Draw(texture);
+
+	texture->Lock();
+	CopyToBackBuffer(texture->GetTexture());
+	texture->Unlock();
+	mSwapChain->Present(0, 0);
+	delete texture;
 }
 
 void
 Compositor::Composite(HANDLE aSharedTextureHandle)
 {
+	/*
 	mSharedHandle = aSharedTextureHandle;
 	if (!mSharedHandle) { return; }
 
@@ -255,4 +257,5 @@ Compositor::Composite(HANDLE aSharedTextureHandle)
 	mutex->ReleaseSync(0);
 
 	mSwapChain->Present(0, 0);
+	*/
 }

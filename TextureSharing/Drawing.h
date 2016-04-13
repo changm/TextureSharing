@@ -11,27 +11,21 @@ using namespace DirectX;
 class Drawing {
 public:
 	Drawing(ID3D11Device* aDevice,
-					ID3D11DeviceContext* aContext,
-					LONG aWidth,
-					LONG aHeight);
+					ID3D11DeviceContext* aContext);
 
 	// Draws to this texture
 	void Draw(Texture* aTexture);
 
 	// Returns the finished drawing! Only alive as long as this object is alive
 	ID3D11Texture2D* Draw();
-	HANDLE GetSharedTextureHandle();
 	~Drawing();
-	void Lock();
-	void Unlock();
 
 private:
 	// Init all the things
 	void SetRenderTarget(Texture* aTexture);
-	void InitTexture();
-	void InitViewport();
+	void InitViewport(Texture* aTexture);
 	void UpdateConstantBuffers();
-	void InitMatrices();
+	void InitMatrices(Texture* aTexture);
 	void UploadVertices();
 	void SetInputLayout();
 	int SetIndexBuffers();
@@ -51,17 +45,11 @@ private:
 	ID3D11Device* mDevice;
 	ID3D11DeviceContext* mContext;
 
-	ID3D11RenderTargetView* mRenderTarget;
-	Texture* mTexture;
-
 	ID3D11Buffer* mConstantBuffers[ConstantBuffers::NUM_BUFFERS];
 
 	XMMATRIX mProjectionMatrix;
 	XMMATRIX mViewMatrix;
 	XMMATRIX mWorldMatrix;
-
-	LONG mWidth;
-	LONG mHeight;
 
 	// Our buffers
 	ID3D11Buffer* mVertexBuffer;
