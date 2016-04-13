@@ -226,9 +226,7 @@ Compositor::CompositeSolo()
 	*/
 	Drawing draw(mDevice, mContext, mWidth, mHeight);
 	ID3D11Texture2D* texture = draw.Draw();
-	draw.Lock();
 	CopyToBackBuffer(texture);
-	draw.Unlock();
 	mSwapChain->Present(0, 0);
 	//Composite(mSharedHandle);
 }

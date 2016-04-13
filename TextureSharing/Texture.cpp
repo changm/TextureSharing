@@ -36,6 +36,7 @@ Texture::Unlock()
 		HRESULT hr = mMutex->ReleaseSync(0);
 		assert(SUCCESS(hr));
 		mMutex->Release();
+		mMutex = nullptr;
 	}
 }
 

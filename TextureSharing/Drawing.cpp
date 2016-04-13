@@ -35,7 +35,6 @@ Drawing::Drawing(ID3D11Device* aDevice,
 	, mHeight(aHeight)
 {
 	InitTexture();
-	Lock();
 
 	InitViewport();
 	SetRenderTarget();
@@ -45,12 +44,10 @@ Drawing::Drawing(ID3D11Device* aDevice,
 	CompileShaders();
 
 	SetRenderTarget();
-	Unlock();
 }
 
 Drawing::~Drawing()
 {
-	printf("Killing drawing\n");
 	mVertexShader->Release();
 	mPixelShader->Release();
 	if (mVertexBuffer) {
@@ -269,11 +266,11 @@ Drawing::SetInputLayout()
 
 ID3D11Texture2D* Drawing::Draw()
 {
-	Lock();
 	UploadVertices();
 	SetInputLayout();
 	int indexCount = SetIndexBuffers();
 
+	Lock();
 	mContext->DrawIndexed(indexCount, 0, 0);
 	Unlock();
 	return mTexture->GetTexture();
