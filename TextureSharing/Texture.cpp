@@ -23,15 +23,20 @@ void
 Texture::Lock()
 {
 	mTexture->QueryInterface(__uuidof(IDXGIKeyedMutex), (void**)&mMutex);
-	HRESULT hr = mMutex->AcquireSync(0, 10000);
-	assert(SUCCESS(hr));
+	if (mMutex) {
+		HRESULT hr = mMutex->AcquireSync(0, 10000);
+		assert(SUCCESS(hr));
+	}
 }
 
 void
 Texture::Unlock()
 {
-	HRESULT hr = mMutex->ReleaseSync(0);
-	assert(SUCCESS(hr));
+	if (mMutex) {
+		HRESULT hr = mMutex->ReleaseSync(0);
+		assert(SUCCESS(hr));
+		mMutex->Release();
+	}
 }
 
 void
@@ -78,7 +83,12 @@ Texture::Deallocate()
 		mShaderResourceView->Release();
 		mDevice->Release();
 		Unlock();
-		mMutex->Release();
+
+		/*
+		if (mMutex) {
+			mMutex->Release();
+		}
+		*/
 	}
 }
 

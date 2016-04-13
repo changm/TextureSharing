@@ -34,13 +34,18 @@ Drawing::Drawing(ID3D11Device* aDevice,
 	, mWidth(aWidth)
 	, mHeight(aHeight)
 {
-	InitViewport();
 	InitTexture();
+	Lock();
+
+	InitViewport();
 	SetRenderTarget();
 	
 	InitMatrices();
 	UpdateConstantBuffers();
 	CompileShaders();
+
+	SetRenderTarget();
+	Unlock();
 }
 
 Drawing::~Drawing()
@@ -52,8 +57,17 @@ Drawing::~Drawing()
 		mVertexBuffer->Release();
 		mIndexBuffer->Release();
 	}
-	mTexture->Unlock();
 	delete mTexture;
+}
+
+void Drawing::Lock()
+{
+	mTexture->Lock();
+}
+
+void Drawing::Unlock()
+{
+	mTexture->Unlock();
 }
 
 void Drawing::CompileShaders()
@@ -255,18 +269,16 @@ Drawing::SetInputLayout()
 
 ID3D11Texture2D* Drawing::Draw()
 {
-	/*
-	//mTexture->Lock();
+	Lock();
 	UploadVertices();
 	SetInputLayout();
 	int indexCount = SetIndexBuffers();
 
 	mContext->DrawIndexed(indexCount, 0, 0);
-	//mTexture->Unlock();
+	Unlock();
 	return mTexture->GetTexture();
-	*/
 
-	mTexture->Lock();
+	/*
 	FLOAT red[4];
 	red[0] = 255;
 	red[1] = 0;
@@ -274,4 +286,5 @@ ID3D11Texture2D* Drawing::Draw()
 	red[3] = 0;
 	ClearRect(red);
 	return mTexture->GetTexture();
+	*/
 }

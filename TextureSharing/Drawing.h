@@ -19,6 +19,8 @@ public:
 	ID3D11Texture2D* Draw();
 	HANDLE GetSharedTextureHandle();
 	~Drawing();
+	void Lock();
+	void Unlock();
 
 private:
 	// Init all the things

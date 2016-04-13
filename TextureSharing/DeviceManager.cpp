@@ -39,7 +39,7 @@ void DeviceManager::InitD3D()
 	hr = D3D11CreateDevice(mAdapter,
 		D3D_DRIVER_TYPE_UNKNOWN,
 		NULL,
-		D3D11_CREATE_DEVICE_BGRA_SUPPORT,
+		D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG,
 		NULL, 0, // d3d feature levels
 		D3D11_SDK_VERSION,
 		&mDevice,
