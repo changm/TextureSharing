@@ -37,7 +37,7 @@ private:
 	ID3D11SamplerState* mSamplerState;
 
 	// functions required to draw via shaders
-	void DrawViaTextureShaders(Texture* aTexture);
+	void DrawViaTextureShaders(Texture* aTexture, VertexData* aLocation);
 	void CompileTextureShaders();
 	void InitVertexBuffers(VertexData* aData);
 	void SetInputLayout();

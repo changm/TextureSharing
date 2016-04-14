@@ -159,13 +159,13 @@ Compositor::SetIndexBuffers()
 }
 
 void
-Compositor::DrawViaTextureShaders(Texture* aTexture)
+Compositor::DrawViaTextureShaders(Texture* aTexture, VertexData* aLocation)
 {
 	mContext->OMSetRenderTargets(1, &mBackBufferView, NULL);
 
 	CompileTextureShaders();
 	SetInputLayout();
-	InitVertexBuffers(TopRight);
+	InitVertexBuffers(aLocation);
 	SetIndexBuffers();
 	mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -176,8 +176,6 @@ Compositor::DrawViaTextureShaders(Texture* aTexture)
 	int indexCount = 6;
 	mContext->DrawIndexed(indexCount, 0, 0);
 	aTexture->Unlock();
-
-	InitVertexBuffers(TopLeft);
 }
 
 /* static */ Compositor*
@@ -257,7 +255,10 @@ Compositor::CompositeSolo()
 	}
 
 	//CopyToBackBuffer(textures[5]);
-	DrawViaTextureShaders(textures[3]);
+	DrawViaTextureShaders(textures[0], TopLeft);
+	DrawViaTextureShaders(textures[1], TopRight);
+	DrawViaTextureShaders(textures[2], BottomLeft);
+	DrawViaTextureShaders(textures[3], BottomRight);
 	mSwapChain->Present(0, 0);
 
 	for (int i = 0; i < size; i++) {
