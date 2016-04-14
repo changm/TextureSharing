@@ -159,6 +159,7 @@
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TextureSharing.h" />
     <ClInclude Include="Vertex.h" />
+    <ClInclude Include="VertexData.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Child.cpp" />

@@ -7,6 +7,7 @@ using namespace DirectX;
 
 class DeviceManager;
 class Texture;
+struct VertexData;
 
 class Compositor {
 public:
@@ -24,6 +25,7 @@ private:
 	void CopyToBackBuffer(Texture* aTexture);
 	void InitBackBuffer();
 	void InitColors(FLOAT aColors[][4], int aCount);
+	void RenderTextures(Texture* textures[]);
 
 	HWND mOutputWindow;
 	static Compositor* mCompositor;
@@ -35,9 +37,9 @@ private:
 	ID3D11SamplerState* mSamplerState;
 
 	// functions required to draw via shaders
-	void DrawViaTextureShaders(ID3D11Texture2D* aTexture);
+	void DrawViaTextureShaders(Texture* aTexture);
 	void CompileTextureShaders();
-	void InitVertexBuffers();
+	void InitVertexBuffers(VertexData* aData);
 	void SetInputLayout();
 	void SetIndexBuffers();
 	void SetTextureSampling(ID3D11Texture2D* aTexture);

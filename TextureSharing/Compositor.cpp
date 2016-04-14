@@ -7,6 +7,7 @@
 #include <d3dcompiler.h>
 #include "Drawing.h"
 #include <stdio.h>
+#include "VertexData.h"
 
 Compositor* Compositor::mCompositor = nullptr;
 Compositor::Compositor(HWND aOutputWindow)
@@ -69,20 +70,6 @@ Compositor::CompileTextureShaders()
 	mContext->PSSetShader(mPixelShader, 0, 0);
 }
 
-struct VertexData
-{
-	XMFLOAT3 Position; // Goes from -1..1
-	XMFLOAT2 Tex;	// (u,v) goes from 0..1, with 0 being top left
-};
-
-static VertexData vertices[] =
-{
-	{ XMFLOAT3(-1, -1, 0), XMFLOAT2(0,1) }, // bottom left
-	{ XMFLOAT3(-1, 1, 0), XMFLOAT2(0,0) },  // top left
-	{ XMFLOAT3(1, 1, 0), XMFLOAT2(1,0) },	  // top right
-	{ XMFLOAT3(1, -1, 0), XMFLOAT2(1,1) },  // bottom right
-};
-
 void
 Compositor::SetInputLayout()
 {
@@ -97,7 +84,7 @@ Compositor::SetInputLayout()
 	const int inputCount = sizeof(inputDesc) / sizeof(VertexData);
 	assert(inputCount == 2);
 
-	HRESULT result = mDevice->CreateInputLayout(inputDesc, 2,
+	HRESULT result = mDevice->CreateInputLayout(inputDesc, inputCount,
 							mVertexShaderBytecode->GetBufferPointer(),
 							mVertexShaderBytecode->GetBufferSize(),
 							&inputLayout);
@@ -120,19 +107,19 @@ Compositor::SetTextureSampling(ID3D11Texture2D* aTexture)
 }
 
 void
-Compositor::InitVertexBuffers()
+Compositor::InitVertexBuffers(VertexData* aData)
 {
 	D3D11_BUFFER_DESC bufferDesc;
 	memset(&bufferDesc, 0, sizeof(bufferDesc));
 
 	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	bufferDesc.ByteWidth = sizeof(VertexData) * _countof(vertices);
+	bufferDesc.ByteWidth = sizeof(VertexData) * 4; // 4 because we always draw a square
 	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bufferDesc.CPUAccessFlags = 0;
 
 	D3D11_SUBRESOURCE_DATA resourceData;
 	memset(&resourceData, 0, sizeof(D3D11_SUBRESOURCE_DATA));
-	resourceData.pSysMem = vertices;
+	resourceData.pSysMem = aData;
 
 	// This uploads the data to the gpu
 	HRESULT result = mDevice->CreateBuffer(&bufferDesc, &resourceData, &mVertexBuffer);
@@ -172,22 +159,25 @@ Compositor::SetIndexBuffers()
 }
 
 void
-Compositor::DrawViaTextureShaders(ID3D11Texture2D* aTexture)
+Compositor::DrawViaTextureShaders(Texture* aTexture)
 {
 	mContext->OMSetRenderTargets(1, &mBackBufferView, NULL);
 
 	CompileTextureShaders();
 	SetInputLayout();
-	InitVertexBuffers();
+	InitVertexBuffers(TopRight);
 	SetIndexBuffers();
-	SetTextureSampling(aTexture);
-
-	// Tell the GPU we just have a list of triangles
 	mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	aTexture->Lock();
+	SetTextureSampling(aTexture->GetTexture());
 
 	// Finally draw the 6 vertices we have
 	int indexCount = 6;
 	mContext->DrawIndexed(indexCount, 0, 0);
+	aTexture->Unlock();
+
+	InitVertexBuffers(TopLeft);
 }
 
 /* static */ Compositor*
@@ -240,6 +230,12 @@ Compositor::InitColors(FLOAT aColors[][4], int aCount)
 }
 
 void
+Compositor::RenderTextures(Texture* textures[])
+{
+
+}
+
+void
 Compositor::CompositeSolo()
 {
 	/*
@@ -260,7 +256,8 @@ Compositor::CompositeSolo()
 		drawing.Draw(textures[i], colors[i]);
 	}
 
-	CopyToBackBuffer(textures[5]);
+	//CopyToBackBuffer(textures[5]);
+	DrawViaTextureShaders(textures[3]);
 	mSwapChain->Present(0, 0);
 
 	for (int i = 0; i < size; i++) {
