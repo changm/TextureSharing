@@ -2,6 +2,7 @@
 #include <d3d11.h>
 #include <d2d1.h>
 #include <DirectXMath.h>
+#include <vector>
 
 using namespace DirectX;
 
@@ -14,7 +15,7 @@ public:
 	Compositor(HWND aOutputWindow);
 	~Compositor();
 
-	void Composite(HANDLE aSharedTextureHandle);
+	void Composite(std::vector<HANDLE>& aSharedHandles);
 	void CompositeSolo();
 	static Compositor* GetCompositor(HWND aOutputWindow);
 	LONG GetWidth() { return mWidth; }

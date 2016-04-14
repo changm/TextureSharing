@@ -3,6 +3,7 @@
 class Compositor;
 class DeviceManager;
 class ServerPipe;
+#include <vector>
 
 class Parent
 {
@@ -31,4 +32,6 @@ private:
 	ServerPipe* mPipe;
 	MessageData mChildMessages;
 	HANDLE mMessageLoop;
+
+	std::vector<HANDLE> mHandles;
 };

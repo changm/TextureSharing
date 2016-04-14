@@ -9,6 +9,7 @@ enum MESSAGES
 	WIDTH,
 	HEIGHT,
 	INIT_DRAW,
+	CHILD_FINISHED,
 };
 
 struct MessageData

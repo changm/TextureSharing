@@ -28,6 +28,15 @@ static bool SUCCESS(HRESULT aResult) {
 	return aResult == S_OK;
 }
 
+// Since the incoming numbers are FLOATS, the values are actually 0-1, not 0-255
+static void InitColor(FLOAT* aFloatOut, FLOAT r, FLOAT g, FLOAT b, FLOAT a)
+{
+	aFloatOut[0] = r;
+	aFloatOut[1] = g;
+	aFloatOut[2] = b;
+	aFloatOut[3] = a;
+}
+
 // TODO: reference additional headers your program requires here
 #include "DeviceManager.h"
 #include "Drawing.h"

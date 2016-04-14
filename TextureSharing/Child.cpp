@@ -53,24 +53,62 @@ void Child::MessageLoop()
 	}
 }
 
-void Child::Draw()
+void
+Child::InitColors(FLOAT aColors[][4], int aCount)
 {
-	Texture* targetTexture = Texture::AllocateTexture(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), mWidth, mHeight);
+	assert(aCount == 6);
+	InitColor(aColors[0], 1, 0, 0, 1);
+	InitColor(aColors[1], 0, 1, 0, 1);
+	InitColor(aColors[2], 0, 0, 1, 1);
+	InitColor(aColors[3], 1, 1, 0, 1);
+	InitColor(aColors[4], 1, 0, 1, 1);
+	InitColor(aColors[5], 0.5, 0.5, 0.5, 1);
+}
 
-	FLOAT red[4];
-	red[0] = 1;
-	red[1] = 0;
-	red[2] = 0;
-	red[3] = 0;
-
-	mDraw->Draw(targetTexture, red);
-	HANDLE sharedTexture = targetTexture->GetSharedHandle();
+void
+Child::SendSharedHandle(Texture* aTexture)
+{
+	HANDLE sharedTexture = aTexture->GetSharedHandle();
 
 	MessageData sharedHandle = {
 		MESSAGES::HANDLE_MESSAGE,
 		(DWORD)sharedTexture,
 	};
 
-	printf("Child sending shared handle\n");
 	mPipe->SendMsg(&sharedHandle);
+}
+
+void
+Child::SendDrawFinished()
+{
+	MessageData finishMessage = {
+		MESSAGES::CHILD_FINISHED,
+		0,
+	};
+
+	mPipe->SendMsg(&finishMessage);
+}
+
+void
+Child::Draw()
+{
+	const int size = 6;
+	FLOAT colors[size][4];
+	Texture* textures[size];
+	InitColors(colors, size);
+
+	for (int i = 0; i < size; i++) {
+		textures[i] = Texture::AllocateTexture(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), mWidth, mHeight);
+		SendSharedHandle(textures[i]);
+	}
+
+	for (int i = 0; i < size; i++) {
+		mDraw->Draw(textures[i], colors[i]);
+	}
+
+	for (int i = 0; i < size; i++) {
+		delete textures[i];
+	}
+
+	SendDrawFinished();
 }

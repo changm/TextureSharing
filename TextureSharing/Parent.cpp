@@ -173,7 +173,9 @@ Parent::Parent(HINSTANCE aInstance, int aCmdShow)
 Parent::~Parent()
 {
 		// Message loop is closed after generate window
-	//assert(CloseHandle(mMessageLoop));
+	assert(CloseHandle(mMessageLoop));
+	mHandles.clear();
+
 	mPipe->ClosePipe();
 	CloseHandle(mChildProcess.hProcess);
 	CloseHandle(mChildProcess.hThread);
@@ -199,13 +201,19 @@ void Parent::SendDraw()
 
 void Parent::ParentMessageLoop()
 {
-	// Happens on another thread
+	// Happens on message loop thread
 	while (mPipe->ReadMsg(&mChildMessages)) {
 		switch (mChildMessages.type) {
 		case MESSAGES::HANDLE_MESSAGE:
 		{
 			HANDLE sharedTextureHandle = (HANDLE) mChildMessages.data;
-			Compositor::GetCompositor(mOutputWindow)->Composite(sharedTextureHandle);
+			printf("Parent got shared handle: %u\n", sharedTextureHandle);
+			mHandles.push_back(sharedTextureHandle);
+			break;
+		}
+		case MESSAGES::CHILD_FINISHED:
+		{
+			Compositor::GetCompositor(mOutputWindow)->Composite(mHandles);
 			break;
 		}
 		default:

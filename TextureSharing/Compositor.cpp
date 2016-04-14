@@ -8,6 +8,7 @@
 #include "Drawing.h"
 #include <stdio.h>
 #include "VertexData.h"
+#include <vector>
 
 Compositor* Compositor::mCompositor = nullptr;
 Compositor::Compositor(HWND aOutputWindow)
@@ -206,15 +207,6 @@ Compositor::CopyToBackBuffer(Texture* aTexture)
 	aTexture->Unlock();
 }
 
-// Since the incoming numbers are FLOATS, the values are actually 0-1, not 0-255
-static void InitColor(FLOAT* aFloatOut, FLOAT r, FLOAT g, FLOAT b, FLOAT a)
-{
-	aFloatOut[0] = r;
-	aFloatOut[1] = g;
-	aFloatOut[2] = b;
-	aFloatOut[3] = a;
-}
-
 void
 Compositor::InitColors(FLOAT aColors[][4], int aCount)
 {
@@ -279,8 +271,26 @@ Compositor::CompositeSolo()
 }
 
 void
-Compositor::Composite(HANDLE aSharedTextureHandle)
+Compositor::Composite(std::vector<HANDLE>& aHandles)
 {
+	for (std::vector<HANDLE>::iterator it = aHandles.begin(); it != aHandles.end(); it++) {
+		HANDLE handle = *it;
+		ID3D11Texture2D* sharedTexture;
+		HRESULT hr = mDevice->OpenSharedResource(handle, __uuidof(ID3D11Texture2D), (void**)&sharedTexture);
+		assert(SUCCESS(hr));
+
+		IDXGIKeyedMutex* mutex;
+		sharedTexture->QueryInterface(__uuidof(IDXGIKeyedMutex), (void**)&mutex);
+		hr = mutex->AcquireSync(0, 10000);
+		assert(SUCCESS(hr));
+
+		mContext->CopyResource(mBackBuffer, sharedTexture);
+		mutex->ReleaseSync(0);
+		mutex->Release();
+	}
+
+	mSwapChain->Present(0, 0);
+
 	/*
 	mSharedHandle = aSharedTextureHandle;
 	if (!mSharedHandle) { return; }
