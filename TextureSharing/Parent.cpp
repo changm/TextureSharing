@@ -75,6 +75,12 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hWnd, &ps);
+		Compositor::GetCompositor(hWnd)->ResizeBuffers();
+		if (!sParent->mInitChild) {
+			sParent->InitChildDraw();
+			sParent->mInitChild = true;
+		}
+		sParent->SendDraw();
 		EndPaint(hWnd, &ps);
 	}
 	break;
@@ -216,7 +222,7 @@ Parent::~Parent()
 
 void Parent::InitChildDraw()
 {
-	assert(Parent::IsCompositorThread());
+	//assert(Parent::IsCompositorThread());
 	LONG width = Compositor::GetCompositor(mOutputWindow)->GetWidth();
 	LONG height = Compositor::GetCompositor(mOutputWindow)->GetHeight();
 	assert(width);
@@ -234,7 +240,7 @@ void Parent::InitChildDraw()
 
 void Parent::SendDraw()
 {
-	assert(Parent::IsCompositorThread());
+	//assert(Parent::IsCompositorThread());
 	LONG width = Compositor::GetCompositor(mOutputWindow)->GetWidth();
 	LONG height = Compositor::GetCompositor(mOutputWindow)->GetHeight();
 	assert(width);
@@ -298,9 +304,11 @@ Parent::IsCompositorThread()
 static DWORD PaintLoop(void* aParentInstance)
 {
 	Parent* parent = (Parent*)aParentInstance;
+	/*
 	Compositor::GetCompositor(parent->mOutputWindow)->ResizeBuffers();
 	parent->InitChildDraw();
 	parent->SendDraw();
+	*/
 	parent->ParentMessageLoop();
 	return 0;
 }

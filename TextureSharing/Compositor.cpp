@@ -24,7 +24,6 @@ Compositor::Compositor(HWND aOutputWindow)
 	mDevice->AddRef();
 
 	mDeviceManager->CreateSwapChain(&mSwapChain, mWidth, mHeight, mOutputWindow);
-
 	PrepareDrawing();
 }
 
@@ -344,7 +343,6 @@ Compositor::CompositeWithSync(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle)
 	}
 
 	mContext->Flush();
-
 	mSwapChain->Present(0, 0);
 }
 

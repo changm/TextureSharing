@@ -10,6 +10,7 @@ using namespace DirectX;
 // Manages our d3d devices for us
 class Drawing {
 public:
+	Drawing() {}
 	Drawing(ID3D11Device* aDevice,
 					ID3D11DeviceContext* aContext);
 

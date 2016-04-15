@@ -4,6 +4,7 @@
 #include "Drawing.h"
 #include <stdio.h>
 #include "SyncTexture.h"
+#include <new.h>
 
 Child::Child()
 {
@@ -25,8 +26,10 @@ void Child::Clean()
 	}
 
 	delete mSyncTexture;
-	delete mDraw;
 	delete mDeviceManager;
+
+	mDraw->~Drawing();
+	_aligned_free(mDraw);
 }
 
 void Child::MessageLoop()
@@ -48,25 +51,17 @@ void Child::MessageLoop()
 			mHeight = (LONG) msg.data;
 			break;
 		}
+		case MESSAGES::INIT_CHILD_DRAW_SYNC_HANDLE:
 		case MESSAGES::INIT_CHILD_DRAW:
 		{
-			//printf("[Child] init draw\n");
 			assert(mWidth);
 			assert(mHeight);
-			mDraw = new Drawing(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext());
+			// Have to use aligned malloc since XMMATRIX uses SSE and needs to be 16 byte aligned
+			void* aligned = _aligned_malloc(sizeof(Drawing), 16);
+			mDraw = new (aligned) Drawing(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext());
+
 			InitColors(mColors);
-			bool useMutex = true;
-			InitTextures(useMutex);
-			InitColor(white, 1, 1, 1, 1);
-			break;
-		}
-		case MESSAGES::INIT_CHILD_DRAW_SYNC_HANDLE:
-		{
-			assert(mWidth);
-			assert(mHeight);
-			mDraw = new Drawing(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext());
-			InitColors(mColors);
-			bool useMutex = false;
+			bool useMutex = msg.type == MESSAGES::INIT_CHILD_DRAW;
 			InitTextures(useMutex);
 			InitColor(white, 1, 1, 1, 1);
 			break;
