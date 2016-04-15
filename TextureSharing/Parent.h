@@ -14,6 +14,9 @@ public:
 	void GenerateWindow();
 	void ParentMessageLoop();
 	void SendDraw();
+	void InitChildDraw();
+
+	bool mInitChild;
 
 private:
 	void CreateContentProcess();

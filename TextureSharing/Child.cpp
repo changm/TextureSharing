@@ -10,11 +10,14 @@ Child::Child()
 	mPipe->ConnectToServerPipe();
 
 	mDeviceManager = new DeviceManager();;
-
 }
 
 Child::~Child()
 {
+	for (int i = 0; i < mTextureCount; i++) {
+		delete mTextures[i];
+	}
+
 	delete mDraw;
 	delete mDeviceManager;
 	delete mPipe;
@@ -23,46 +26,74 @@ Child::~Child()
 void Child::MessageLoop()
 {
 	MessageData msg;
+	printf("Child message loop start\n");
 	while (mPipe->ReadMsg(&msg))
 	{
 		switch(msg.type)
 		{
 		case MESSAGES::WIDTH:
 		{
+			printf("[Child] width\n");
 			mWidth = (LONG) msg.data;
 			break;
 		}
 		case MESSAGES::HEIGHT:
 		{
+			printf("[Child] height\n");
 			mHeight = (LONG) msg.data;
 			break;
 		}
 		case MESSAGES::INIT_DRAW:
 		{
+			printf("[Child] init draw\n");
+			assert(mWidth);
+			assert(mHeight);
 			mDraw = new Drawing(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext());
+			InitColors(mColors);
+			InitTextures();
 			break;
 		}
 		case MESSAGES::CLOSE:
+		{
+			printf("[Child] Child closing channel\n");
 			return;
+		}
 		case MESSAGES::CHILD_DRAW:
+		{
+			assert(mDraw, "asked to draw before we initialized drawing");
+			printf("[Child] DRAW\n");
 			Draw();
 			break;
+		}
 		default:
 			break;
 		}
+
+		printf("[Child] waiting on messages\n");
+		DWORD waitReturn = WaitForSingleObjectEx(mPipe->GetPipe(), INFINITE, TRUE);
+		printf("[Child] finished waiting %d\n", waitReturn);
 	}
 }
 
 void
-Child::InitColors(FLOAT aColors[][4], int aCount)
+Child::InitColors(FLOAT aColors[][4])
 {
-	assert(aCount == 6);
 	InitColor(aColors[0], 1, 0, 0, 1);
 	InitColor(aColors[1], 0, 1, 0, 1);
 	InitColor(aColors[2], 0, 0, 1, 1);
 	InitColor(aColors[3], 1, 1, 0, 1);
 	InitColor(aColors[4], 1, 0, 1, 1);
 	InitColor(aColors[5], 0.5, 0.5, 0.5, 1);
+}
+
+void
+Child::InitTextures()
+{
+	// Only draw 4 textures for now
+	for (int i = 0; i < mTextureCount; i++) {
+		mTextures[i] = Texture::AllocateTexture(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), mWidth, mHeight);
+		SendSharedHandle(mTextures[i]);
+	}
 }
 
 void
@@ -92,22 +123,9 @@ Child::SendDrawFinished()
 void
 Child::Draw()
 {
-	const int size = 6;
-	FLOAT colors[size][4];
-	Texture* textures[size];
-	InitColors(colors, size);
-
-	for (int i = 0; i < size; i++) {
-		textures[i] = Texture::AllocateTexture(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), mWidth, mHeight);
-		SendSharedHandle(textures[i]);
-	}
-
-	for (int i = 0; i < size; i++) {
-		mDraw->Draw(textures[i], colors[i]);
-	}
-
-	for (int i = 0; i < size; i++) {
-		delete textures[i];
+	printf("[Child] Child Drawing\n");
+	for (int i = 0; i < mTextureCount; i++) {
+		mDraw->Draw(mTextures[i], mColors[i]);
 	}
 
 	SendDrawFinished();

@@ -22,6 +22,7 @@
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
+static Parent* sParent;
 
 // Listen for the about
 INT_PTR CALLBACK
@@ -69,8 +70,14 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_PAINT:
 	{
 		PAINTSTRUCT ps;
+		printf("WM_PAINT request\n");
 		HDC hdc = BeginPaint(hWnd, &ps);
-		Compositor::GetCompositor(hWnd)->CompositeSolo();
+		Compositor::GetCompositor(hWnd)->ResizeBuffers();
+		if (!sParent->mInitChild) {
+			sParent->InitChildDraw();
+			sParent->mInitChild = true;
+		}
+		sParent->SendDraw();
 		EndPaint(hWnd, &ps);
 	}
 	break;
@@ -149,6 +156,7 @@ BOOL
 Parent::InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Store instance handle in our global variable
+	 sParent = this;
 
    mOutputWindow = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
@@ -163,6 +171,7 @@ Parent::InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 Parent::Parent(HINSTANCE aInstance, int aCmdShow)
 	: mCmdShow(aCmdShow)
+	, mInitChild(false)
 {
 	mPipe = new ServerPipe();
 	mPipe->CreateServerPipe();
@@ -182,20 +191,33 @@ Parent::~Parent()
 	delete mPipe;
 }
 
-void Parent::SendDraw()
+void Parent::InitChildDraw()
 {
 	LONG width = Compositor::GetCompositor(mOutputWindow)->GetWidth();
 	LONG height = Compositor::GetCompositor(mOutputWindow)->GetHeight();
+	assert(width);
+	assert(height);
 
-	MessageData draw = { MESSAGES::CHILD_DRAW, 0 };
 	MessageData msgWidth = { MESSAGES::WIDTH, (int) width };
 	MessageData msgHeight = { MESSAGES::HEIGHT, (int) height };
 	MessageData initDraw = { MESSAGES::INIT_DRAW, 0 };
 
 	mPipe->SendMsg(&msgWidth);
 	mPipe->SendMsg(&msgHeight);
-
 	mPipe->SendMsg(&initDraw);
+}
+
+void Parent::SendDraw()
+{
+	LONG width = Compositor::GetCompositor(mOutputWindow)->GetWidth();
+	LONG height = Compositor::GetCompositor(mOutputWindow)->GetHeight();
+
+	MessageData msgWidth = { MESSAGES::WIDTH, (int) width };
+	MessageData msgHeight = { MESSAGES::HEIGHT, (int) height };
+	MessageData draw = { MESSAGES::CHILD_DRAW, 0 };
+
+	mPipe->SendMsg(&msgWidth);
+	mPipe->SendMsg(&msgHeight);
 	mPipe->SendMsg(&draw);
 }
 
@@ -206,13 +228,14 @@ void Parent::ParentMessageLoop()
 		switch (mChildMessages.type) {
 		case MESSAGES::HANDLE_MESSAGE:
 		{
+			printf("[Parent] Got shared handle\n");
 			HANDLE sharedTextureHandle = (HANDLE) mChildMessages.data;
-			printf("Parent got shared handle: %u\n", sharedTextureHandle);
 			mHandles.push_back(sharedTextureHandle);
 			break;
 		}
 		case MESSAGES::CHILD_FINISHED:
 		{
+			printf("[Parent] Child Finished\n");
 			Compositor::GetCompositor(mOutputWindow)->Composite(mHandles);
 			break;
 		}

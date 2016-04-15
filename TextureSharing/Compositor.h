@@ -20,13 +20,14 @@ public:
 	static Compositor* GetCompositor(HWND aOutputWindow);
 	LONG GetWidth() { return mWidth; }
 	LONG GetHeight() { return mHeight; }
+	void ResizeBuffers();
 
 private:
+	void CalculateDimensions();
 	void ReadTextures();
 	void CopyToBackBuffer(Texture* aTexture);
 	void InitBackBuffer();
 	void InitColors(FLOAT aColors[][4], int aCount);
-	void RenderTextures(Texture* textures[]);
 
 	HWND mOutputWindow;
 	static Compositor* mCompositor;
@@ -39,6 +40,8 @@ private:
 
 	// functions required to draw via shaders
 	void DrawViaTextureShaders(Texture* aTexture, VertexData* aLocation);
+	void DrawViaTextureShaders(ID3D11Texture2D* aTexture, VertexData* aLocation);
+	void PrepareDrawing();
 	void CompileTextureShaders();
 	void InitVertexBuffers(VertexData* aData);
 	void SetInputLayout();

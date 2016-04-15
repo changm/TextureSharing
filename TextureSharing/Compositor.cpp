@@ -14,13 +14,7 @@ Compositor* Compositor::mCompositor = nullptr;
 Compositor::Compositor(HWND aOutputWindow)
 	: mOutputWindow(aOutputWindow)
 {
-	RECT clientRect;
-	GetClientRect(mOutputWindow, &clientRect);
-
-	// Compute the exact client dimensions. This will be used
-	// to initialize the render targets for our swap chain.
-	mWidth = clientRect.right - clientRect.left;
-	mHeight = clientRect.bottom - clientRect.top;
+	CalculateDimensions();
 
 	mDeviceManager = new DeviceManager();
 	mContext = mDeviceManager->GetDeviceContext();
@@ -28,6 +22,33 @@ Compositor::Compositor(HWND aOutputWindow)
 	mDeviceManager->CreateSwapChain(&mSwapChain, mWidth, mHeight, mOutputWindow);
 
 	InitBackBuffer();
+}
+
+void
+Compositor::ResizeBuffers()
+{
+	CalculateDimensions();
+	/*
+	mBackBuffer->Release();
+	mBackBufferView->Release();
+	mBackBuffer = nullptr;
+	mBackBufferView = nullptr;
+
+	mSwapChain->ResizeBuffers(0, mWidth, mHeight, DXGI_FORMAT_UNKNOWN, 0);
+	InitBackBuffer();
+	*/
+}
+
+void
+Compositor::CalculateDimensions()
+{
+	RECT clientRect;
+	GetClientRect(mOutputWindow, &clientRect);
+
+	// Compute the exact client dimensions. This will be used
+	// to initialize the render targets for our swap chain.
+	mWidth = clientRect.right - clientRect.left;
+	mHeight = clientRect.bottom - clientRect.top;
 }
 
 Compositor::~Compositor()
@@ -110,6 +131,11 @@ Compositor::SetTextureSampling(ID3D11Texture2D* aTexture)
 void
 Compositor::InitVertexBuffers(VertexData* aData)
 {
+	assert(aData);
+	if (mVertexBuffer) {
+		mVertexBuffer->Release();
+	}
+
 	D3D11_BUFFER_DESC bufferDesc;
 	memset(&bufferDesc, 0, sizeof(bufferDesc));
 
@@ -160,22 +186,35 @@ Compositor::SetIndexBuffers()
 }
 
 void
-Compositor::DrawViaTextureShaders(Texture* aTexture, VertexData* aLocation)
+Compositor::PrepareDrawing()
 {
 	mContext->OMSetRenderTargets(1, &mBackBufferView, NULL);
 
 	CompileTextureShaders();
 	SetInputLayout();
-	InitVertexBuffers(aLocation);
 	SetIndexBuffers();
 	mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+}
 
-	aTexture->Lock();
-	SetTextureSampling(aTexture->GetTexture());
+/// WARNING: ASSUMES YOU ALREADY LOCKED THE TEXTURE
+void
+Compositor::DrawViaTextureShaders(ID3D11Texture2D* aTexture, VertexData* aLocation)
+{
+	InitVertexBuffers(aLocation);
+	SetTextureSampling(aTexture);
 
 	// Finally draw the 6 vertices we have
 	int indexCount = 6;
 	mContext->DrawIndexed(indexCount, 0, 0);
+}
+
+void
+Compositor::DrawViaTextureShaders(Texture* aTexture, VertexData* aLocation)
+{
+	InitVertexBuffers(aLocation);
+
+	aTexture->Lock();
+	DrawViaTextureShaders(aTexture->GetTexture(), aLocation);
 	aTexture->Unlock();
 }
 
@@ -220,12 +259,6 @@ Compositor::InitColors(FLOAT aColors[][4], int aCount)
 }
 
 void
-Compositor::RenderTextures(Texture* textures[])
-{
-
-}
-
-void
 Compositor::CompositeSolo()
 {
 	/*
@@ -233,7 +266,6 @@ Compositor::CompositeSolo()
 		return;
 	}
 	Composite(mSharedHandle);
-	*/
 	const int size = 6;
 	FLOAT colors[size][4];
 	Texture* textures[size];
@@ -247,6 +279,8 @@ Compositor::CompositeSolo()
 	}
 
 	//CopyToBackBuffer(textures[5]);
+	PrepareDrawing();
+
 	DrawViaTextureShaders(textures[0], TopLeft);
 	DrawViaTextureShaders(textures[1], TopRight);
 	DrawViaTextureShaders(textures[2], BottomLeft);
@@ -273,6 +307,10 @@ Compositor::CompositeSolo()
 void
 Compositor::Composite(std::vector<HANDLE>& aHandles)
 {
+	int handleCount = aHandles.size();
+	PrepareDrawing();
+
+	int position = 0;
 	for (std::vector<HANDLE>::iterator it = aHandles.begin(); it != aHandles.end(); it++) {
 		HANDLE handle = *it;
 		ID3D11Texture2D* sharedTexture;
@@ -284,7 +322,8 @@ Compositor::Composite(std::vector<HANDLE>& aHandles)
 		hr = mutex->AcquireSync(0, 10000);
 		assert(SUCCESS(hr));
 
-		mContext->CopyResource(mBackBuffer, sharedTexture);
+		DrawViaTextureShaders(sharedTexture, POSITIONS[position++]);
+
 		mutex->ReleaseSync(0);
 		mutex->Release();
 	}

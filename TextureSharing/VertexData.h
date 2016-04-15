@@ -43,3 +43,8 @@ static VertexData BottomRight[] =
 	{ XMFLOAT3(1, 0, 0), XMFLOAT2(1,0) },	// top right
 	{ XMFLOAT3(1, -1, 0), XMFLOAT2(1,1) },  // bottom right
 };
+
+VertexData* POSITIONS[] =
+{
+	TopLeft, TopRight, BottomLeft, BottomRight
+};

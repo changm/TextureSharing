@@ -49,6 +49,8 @@ void DeviceManager::InitD3D()
 
 void DeviceManager::CreateSwapChain(IDXGISwapChain** aOutChain, LONG aWidth, LONG aHeight, HWND aOutputWindow)
 {
+	assert(aWidth);
+	assert(aHeight);
 	// Create the swap chain
 	DXGI_SWAP_CHAIN_DESC swapDesc;
 	memset(&swapDesc, 0, sizeof(DXGI_SWAP_CHAIN_DESC));

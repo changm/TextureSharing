@@ -37,10 +37,8 @@ static void AttachToParentConsole()
 
 static void ChildMain()
 {
-	printf("Initializing child\n");
 	Child child;
 	child.MessageLoop();
-	printf("Finished child\n");
 }
 
 static bool IsParent(LPWSTR aCommandLine) {

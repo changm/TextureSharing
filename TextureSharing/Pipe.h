@@ -27,9 +27,12 @@ public:
 
 	BOOL ReadMsg(MessageData* aOutData);
 	BOOL SendMsg(MessageData* aSendData);
+	HANDLE GetPipe() { return mPipe; }
 
 protected:
 	HANDLE mPipe;
+	HANDLE mWaitEvent;
+	OVERLAPPED mOverlap;
 };
 
 class ServerPipe : public Pipe
