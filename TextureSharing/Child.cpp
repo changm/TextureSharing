@@ -68,7 +68,7 @@ void Child::MessageLoop()
 		case MESSAGES::CHILD_DRAW:
 		{
 			assert(mDraw);
-			printf("[Child] DRAW %d\n", GetCurrentProcessId());
+			//printf("[Child] DRAW %d\n", GetCurrentProcessId());
 			Draw();
 			break;
 		}

@@ -18,9 +18,8 @@ public:
 	~Drawing();
 
 private:
-	// Init all the things
 	void SetRenderTarget(Texture* aTexture);
-	void InitViewport(Texture* aTexture);
+	void SetViewport(Texture* aTexture);
 	void UpdateConstantBuffers();
 	void InitMatrices(Texture* aTexture);
 	void UploadVertices(FLOAT* aColor);

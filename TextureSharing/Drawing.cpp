@@ -21,6 +21,8 @@ Drawing::Drawing(ID3D11Device* aDevice,
 	: mDevice(aDevice)
 	, mContext(aContext)
 {
+	CompileShaders();
+	SetInputLayout();
 }
 
 Drawing::~Drawing()
@@ -76,7 +78,7 @@ void Drawing::ClearRect(FLOAT* aRGBAColor)
 }
 */
 
-void Drawing::InitViewport(Texture* aTexture)
+void Drawing::SetViewport(Texture* aTexture)
 {
 	// D3d goes from -1, 1 and that maps to device space via the viewport.
 	D3D11_VIEWPORT viewport;
@@ -232,19 +234,18 @@ Drawing::SetInputLayout()
 	mContext->IASetInputLayout(inputLayout);
 	// Tell the GPU we just have a list of triangles
 	mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	inputLayout->Release();
 }
 
 void Drawing::Draw(Texture* aTexture, FLOAT* aColor) {
 	aTexture->Lock();
 	SetRenderTarget(aTexture);
-	InitViewport(aTexture);
+	SetViewport(aTexture);
 	InitMatrices(aTexture);
 
 	UpdateConstantBuffers();
-	CompileShaders();
-
 	UploadVertices(aColor);
-	SetInputLayout();
+
 	int indexCount = SetIndexBuffers();
 	mContext->DrawIndexed(indexCount, 0, 0);
 	aTexture->Unlock();
