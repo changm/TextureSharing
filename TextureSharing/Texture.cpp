@@ -24,7 +24,7 @@ void
 Texture::Lock()
 {
 	mTexture->QueryInterface(__uuidof(IDXGIKeyedMutex), (void**)&mMutex);
-	HRESULT hr = mMutex->AcquireSync(0, 10000);
+	HRESULT hr = mMutex->AcquireSync(0, INFINITE);
 	assert(SUCCESS(hr));
 }
 
@@ -72,6 +72,7 @@ Texture::AllocateTexture(ID3D11Device* aDevice, ID3D11DeviceContext* aContext, L
 void
 Texture::InitShaderResourceView(ID3D11Device* aDevice)
 {
+	Lock();
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderViewDesc;
 	memset(&shaderViewDesc, 0, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
 	shaderViewDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -80,12 +81,13 @@ Texture::InitShaderResourceView(ID3D11Device* aDevice)
 	shaderViewDesc.Texture2D.MostDetailedMip = 0;
 	HRESULT result = aDevice->CreateShaderResourceView(mTexture, &shaderViewDesc, &mShaderResourceView);
 	assert(result == S_OK);
+	Unlock();
 }
 
 void
 Texture::InitTextureRenderTarget(ID3D11Device* aDevice)
 {
-	printf("Init texture render target\n");
+	Lock();
 	D3D11_RENDER_TARGET_VIEW_DESC renderTargetDesc;
 	memset(&renderTargetDesc, 0, sizeof(D3D11_RENDER_TARGET_VIEW_DESC));
 	renderTargetDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -94,4 +96,5 @@ Texture::InitTextureRenderTarget(ID3D11Device* aDevice)
 
 	HRESULT hr = aDevice->CreateRenderTargetView(mTexture, &renderTargetDesc, &mTextureRenderTarget);
 	assert(hr == S_OK);
+	Unlock();
 }
