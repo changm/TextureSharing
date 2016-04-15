@@ -25,7 +25,6 @@ Compositor::Compositor(HWND aOutputWindow)
 
 	mDeviceManager->CreateSwapChain(&mSwapChain, mWidth, mHeight, mOutputWindow);
 
-	mMutex = CreateMutex(NULL, false, L"CompositorMutex");
 	PrepareDrawing();
 }
 
@@ -53,7 +52,6 @@ Compositor::Clean()
 void
 Compositor::ResizeBuffers()
 {
-	WaitForSingleObject(mMutex, INFINITE);
 	mBackBuffer->Release();
 	mBackBufferView->Release();
 	mBackBuffer = nullptr;
@@ -62,7 +60,6 @@ Compositor::ResizeBuffers()
 	mSwapChain->ResizeBuffers(0, mWidth, mHeight, DXGI_FORMAT_UNKNOWN, 0);
 	InitBackBuffer();
 	mContext->OMSetRenderTargets(1, &mBackBufferView, NULL);
-	ReleaseMutex(mMutex);
 }
 
 void
@@ -224,7 +221,6 @@ Compositor::InitViewport()
 void
 Compositor::PrepareDrawing()
 {
-	WaitForSingleObject(mMutex, INFINITE);
 	InitBackBuffer();
 	mContext->OMSetRenderTargets(1, &mBackBufferView, NULL);
 
@@ -234,7 +230,6 @@ Compositor::PrepareDrawing()
 	SetIndexBuffers();
 	InitVertexBuffers();
 	mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	ReleaseMutex(mMutex);
 }
 
 /// WARNING: ASSUMES YOU ALREADY LOCKED THE TEXTURE
@@ -333,7 +328,6 @@ Compositor::ReportLiveObjects()
 void
 Compositor::CompositeWithSync(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle)
 {
-	WaitForSingleObject(mMutex, INFINITE);
 	LockSyncHandle(aSyncHandle);
 
 	int handleCount = aHandles.size();
@@ -352,13 +346,11 @@ Compositor::CompositeWithSync(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle)
 	mContext->Flush();
 
 	mSwapChain->Present(0, 0);
-	ReleaseMutex(mMutex);
 }
 
 void
 Compositor::Composite(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle)
 {
-	WaitForSingleObject(mMutex, INFINITE);
 	int handleCount = aHandles.size();
 	int position = 0;
 
@@ -383,5 +375,4 @@ Compositor::Composite(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle)
 	mContext->Flush();
 
 	mSwapChain->Present(0, 0);
-	ReleaseMutex(mMutex);
 }
