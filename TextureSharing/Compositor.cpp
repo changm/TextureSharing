@@ -144,7 +144,8 @@ void
 Compositor::SetVertexBuffers(VertexData* aData)
 {
 	D3D11_MAPPED_SUBRESOURCE resource;
-	mContext->Map(mVertexBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &resource);
+	HRESULT hr = mContext->Map(mVertexBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &resource);
+	assert(hr == S_OK);
 	memcpy(resource.pData, aData, sizeof(VertexData) * 4);	// 4 vertices
 	mContext->Unmap(mVertexBuffer, NULL);
 }

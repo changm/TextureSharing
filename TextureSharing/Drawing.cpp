@@ -23,6 +23,7 @@ Drawing::Drawing(ID3D11Device* aDevice,
 {
 	CompileShaders();
 	SetInputLayout();
+	CreateConstantBuffers();
 }
 
 Drawing::~Drawing()
@@ -104,7 +105,7 @@ struct VertexPosColor
 	XMFLOAT3 Color;
 };
 
-void Drawing::InitMatrices(Texture* aTexture)
+void Drawing::SetMatrices(Texture* aTexture)
 {
 	mWorldMatrix = XMMatrixIdentity();
 
@@ -124,6 +125,13 @@ void Drawing::InitMatrices(Texture* aTexture)
 
 void Drawing::UpdateConstantBuffers()
 {
+	mContext->UpdateSubresource(mConstantBuffers[ConstantBuffers::PROJECTION], 0, nullptr, &mProjectionMatrix, 0, 0);
+	mContext->UpdateSubresource(mConstantBuffers[ConstantBuffers::VIEW], 0, nullptr, &mViewMatrix, 0, 0);
+	mContext->UpdateSubresource(mConstantBuffers[ConstantBuffers::WORLD], 0, nullptr, &mWorldMatrix, 0, 0);
+}
+
+void Drawing::CreateConstantBuffers()
+{
 	D3D11_BUFFER_DESC constantBufferDesc;
 	memset(&constantBufferDesc, 0, sizeof(D3D11_BUFFER_DESC));
 
@@ -141,9 +149,6 @@ void Drawing::UpdateConstantBuffers()
 	hr = mDevice->CreateBuffer(&constantBufferDesc, nullptr, &mConstantBuffers[ConstantBuffers::VIEW]);
 	assert(SUCCESS(hr));
 
-	mContext->UpdateSubresource(mConstantBuffers[ConstantBuffers::PROJECTION], 0, nullptr, &mProjectionMatrix, 0, 0);
-	mContext->UpdateSubresource(mConstantBuffers[ConstantBuffers::VIEW], 0, nullptr, &mViewMatrix, 0, 0);
-	mContext->UpdateSubresource(mConstantBuffers[ConstantBuffers::WORLD], 0, nullptr, &mWorldMatrix, 0, 0);
 	mContext->VSSetConstantBuffers(0, ConstantBuffers::NUM_BUFFERS, mConstantBuffers);
 }
 
@@ -184,9 +189,28 @@ int Drawing::SetIndexBuffers()
 	return indexCount;
 }
 
+void Drawing::InitVertexBuffers()
+{
+	D3D11_BUFFER_DESC bufferDesc;
+	memset(&bufferDesc, 0, sizeof(bufferDesc));
+
+	bufferDesc.Usage = D3D11_USAGE_DYNAMIC;	// Can be accessed by the CPU
+	bufferDesc.ByteWidth = sizeof(VertexPosColor) * 4;	// We'll always upload 4 vertices to draw a square
+	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	// This uploads the data to the gpu
+	HRESULT result = mDevice->CreateBuffer(&bufferDesc, NULL, &mVertexBuffer);
+	assert(SUCCESS(result));
+
+	// Finally draw the things, set the vertex buffers to the one that we uploaded to the gpu
+	UINT stride = sizeof(VertexPosColor);
+	UINT offset = 0;
+	mContext->IASetVertexBuffers(0, 1, &mVertexBuffer, &stride, &offset);
+}
+
 void Drawing::UploadVertices(FLOAT* aColor)
 {
-		// Now we create a buffer for our triangle
 	D3D11_BUFFER_DESC bufferDesc;
 	memset(&bufferDesc, 0, sizeof(bufferDesc));
 
@@ -241,7 +265,7 @@ void Drawing::Draw(Texture* aTexture, FLOAT* aColor) {
 	aTexture->Lock();
 	SetRenderTarget(aTexture);
 	SetViewport(aTexture);
-	InitMatrices(aTexture);
+	SetMatrices(aTexture);
 
 	UpdateConstantBuffers();
 	UploadVertices(aColor);

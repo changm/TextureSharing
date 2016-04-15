@@ -21,9 +21,12 @@ private:
 	void SetRenderTarget(Texture* aTexture);
 	void SetViewport(Texture* aTexture);
 	void UpdateConstantBuffers();
-	void InitMatrices(Texture* aTexture);
+	void SetMatrices(Texture* aTexture);
+	void UpdateVertexData(FLOAT* aColor);
 	void UploadVertices(FLOAT* aColor);
+	void InitVertexBuffers();
 	void SetInputLayout();
+	void CreateConstantBuffers();
 	int SetIndexBuffers();
 
 	// Let's use some shaders now
@@ -47,4 +50,6 @@ private:
 	// Our buffers
 	ID3D11Buffer* mVertexBuffer;
 	ID3D11Buffer* mIndexBuffer;
+
+	int mIndexCount;
 };
