@@ -23,6 +23,7 @@ HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 static Parent* sParent;
+DWORD Parent::sCompositorThread = 0;
 
 // Listen for the about
 INT_PTR CALLBACK
@@ -177,13 +178,15 @@ Parent::Parent(HINSTANCE aInstance, int aCmdShow)
 	mPipe->CreateServerPipe();
 	CreateContentProcess();
 	mPipe->WaitForChild();
+
+	mCompositorHandle = CreateEvent(NULL, TRUE, FALSE, L"CompositorHandle");
 }
 
 Parent::~Parent()
 {
-		// Message loop is closed after generate window
+	// Message loop is closed after generate window
 	assert(CloseHandle(mMessageLoop));
-	mHandles.clear();
+	mSharedHandles.clear();
 
 	mPipe->ClosePipe();
 	CloseHandle(mChildProcess.hProcess);
@@ -193,6 +196,7 @@ Parent::~Parent()
 
 void Parent::InitChildDraw()
 {
+	//assert(Parent::IsCompositorThread());
 	LONG width = Compositor::GetCompositor(mOutputWindow)->GetWidth();
 	LONG height = Compositor::GetCompositor(mOutputWindow)->GetHeight();
 	assert(width);
@@ -209,6 +213,7 @@ void Parent::InitChildDraw()
 
 void Parent::SendDraw()
 {
+	//assert(Parent::IsCompositorThread());
 	LONG width = Compositor::GetCompositor(mOutputWindow)->GetWidth();
 	LONG height = Compositor::GetCompositor(mOutputWindow)->GetHeight();
 
@@ -224,25 +229,32 @@ void Parent::SendDraw()
 void Parent::ParentMessageLoop()
 {
 	// Happens on message loop thread
+	assert(Parent::IsCompositorThread());
 	while (mPipe->ReadMsg(&mChildMessages)) {
 		switch (mChildMessages.type) {
 		case MESSAGES::HANDLE_MESSAGE:
 		{
 			printf("[Parent] Got shared handle\n");
 			HANDLE sharedTextureHandle = (HANDLE) mChildMessages.data;
-			mHandles.push_back(sharedTextureHandle);
+			mSharedHandles.push_back(sharedTextureHandle);
 			break;
 		}
 		case MESSAGES::CHILD_FINISHED:
 		{
 			printf("[Parent] Child Finished\n");
-			Compositor::GetCompositor(mOutputWindow)->Composite(mHandles);
+			Compositor::GetCompositor(mOutputWindow)->Composite(mSharedHandles);
 			break;
 		}
 		default:
 			break;
 		} // end switch
 	}
+}
+
+/* static */ BOOL
+Parent::IsCompositorThread()
+{
+	return GetCurrentThreadId() == Parent::sCompositorThread;
 }
 
 static DWORD PaintLoop(void* aParentInstance)
@@ -255,7 +267,7 @@ static DWORD PaintLoop(void* aParentInstance)
 
 void Parent::CreateMessageLoopThread()
 {
-	mMessageLoop = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&PaintLoop, this, 0, NULL);
+	mMessageLoop = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&PaintLoop, this, 0, &Parent::sCompositorThread);
 }
 
 void Parent::GenerateWindow()

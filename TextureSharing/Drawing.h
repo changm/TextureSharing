@@ -27,9 +27,6 @@ private:
 	void SetInputLayout();
 	int SetIndexBuffers();
 
-	// draw a clear color.
-	void ClearRect(FLOAT* aRGBAColor);
-
 	// Let's use some shaders now
 	void CompileShaders();
 	ID3D11VertexShader* mVertexShader;

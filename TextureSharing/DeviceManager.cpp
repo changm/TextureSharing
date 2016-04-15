@@ -22,8 +22,11 @@ DeviceManager::DeviceManager()
 
 DeviceManager::~DeviceManager()
 {
+	mFactory->Release();
 	mDevice->Release();
 	mContext->Release();
+	mAdapter->Release();
+	mD2DFactory->Release();
 }
 
 void DeviceManager::InitD3D()

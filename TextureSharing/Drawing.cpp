@@ -27,9 +27,17 @@ Drawing::~Drawing()
 {
 	mVertexShader->Release();
 	mPixelShader->Release();
-	if (mVertexBuffer) {
-		mVertexBuffer->Release();
-		mIndexBuffer->Release();
+
+	mVertexShaderBytecode->Release();
+	mPixelShaderBytecode->Release();
+	mDevice->Release();
+	mContext->Release();
+
+	mVertexBuffer->Release();
+	mIndexBuffer->Release();
+
+	for (int i = 0; i < ConstantBuffers::NUM_BUFFERS; i++) {
+		mConstantBuffers[i]->Release();
 	}
 }
 

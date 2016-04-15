@@ -67,5 +67,5 @@ private:
 	ID3D11RenderTargetView* mBackBufferView;
 	ID3D11Texture2D* mBackBuffer;
 
-	HANDLE mSharedHandle;
+	HANDLE mMutex;
 };

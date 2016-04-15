@@ -21,21 +21,38 @@ Compositor::Compositor(HWND aOutputWindow)
 	mDevice = mDeviceManager->GetDevice();
 	mDeviceManager->CreateSwapChain(&mSwapChain, mWidth, mHeight, mOutputWindow);
 
+	mMutex = CreateMutex(NULL, false, L"CompositorMutex");
+
 	PrepareDrawing();
+}
+
+Compositor::~Compositor()
+{
+	mVertexBuffer->Release();
+	mVertexShader->Release();
+	mIndexBuffer->Release();
+	mVertexShaderBytecode->Release();
+	mPixelShaderBytecode->Release();
+	mPixelShader->Release();
+	mSwapChain->Release();
+	mBackBuffer->Release();
+	mBackBufferView->Release();
+	delete mDeviceManager;
 }
 
 void
 Compositor::ResizeBuffers()
 {
-	/*
+	WaitForSingleObject(mMutex, INFINITE);
 	mBackBuffer->Release();
 	mBackBufferView->Release();
 	mBackBuffer = nullptr;
 	mBackBufferView = nullptr;
 
 	mSwapChain->ResizeBuffers(0, mWidth, mHeight, DXGI_FORMAT_UNKNOWN, 0);
-	PrepareDrawing();
-	*/
+	InitBackBuffer();
+	mContext->OMSetRenderTargets(1, &mBackBufferView, NULL);
+	ReleaseMutex(mMutex);
 }
 
 void
@@ -48,12 +65,6 @@ Compositor::CalculateDimensions()
 	// to initialize the render targets for our swap chain.
 	mWidth = clientRect.right - clientRect.left;
 	mHeight = clientRect.bottom - clientRect.top;
-}
-
-Compositor::~Compositor()
-{
-	mSwapChain->Release();
-	delete mDeviceManager;
 }
 
 void
@@ -198,6 +209,7 @@ Compositor::InitViewport()
 void
 Compositor::PrepareDrawing()
 {
+	WaitForSingleObject(mMutex, INFINITE);
 	InitBackBuffer();
 	mContext->OMSetRenderTargets(1, &mBackBufferView, NULL);
 
@@ -207,6 +219,7 @@ Compositor::PrepareDrawing()
 	SetIndexBuffers();
 	InitVertexBuffers();
 	mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	ReleaseMutex(mMutex);
 }
 
 /// WARNING: ASSUMES YOU ALREADY LOCKED THE TEXTURE
@@ -312,6 +325,7 @@ Compositor::CompositeSolo()
 void
 Compositor::Composite(std::vector<HANDLE>& aHandles)
 {
+	WaitForSingleObject(mMutex, INFINITE);
 	int handleCount = aHandles.size();
 	int position = 0;
 
@@ -333,4 +347,5 @@ Compositor::Composite(std::vector<HANDLE>& aHandles)
 	}
 
 	mSwapChain->Present(0, 0);
+	ReleaseMutex(mMutex);
 }

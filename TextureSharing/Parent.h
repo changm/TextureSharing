@@ -15,6 +15,8 @@ public:
 	void ParentMessageLoop();
 	void SendDraw();
 	void InitChildDraw();
+	static BOOL IsCompositorThread();
+	static DWORD sCompositorThread;
 
 	bool mInitChild;
 
@@ -36,5 +38,6 @@ private:
 	MessageData mChildMessages;
 	HANDLE mMessageLoop;
 
-	std::vector<HANDLE> mHandles;
+	std::vector<HANDLE> mSharedHandles;
+	HANDLE mCompositorHandle;
 };
