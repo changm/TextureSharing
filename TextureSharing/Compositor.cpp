@@ -21,13 +21,12 @@ Compositor::Compositor(HWND aOutputWindow)
 	mDevice = mDeviceManager->GetDevice();
 	mDeviceManager->CreateSwapChain(&mSwapChain, mWidth, mHeight, mOutputWindow);
 
-	InitBackBuffer();
+	PrepareDrawing();
 }
 
 void
 Compositor::ResizeBuffers()
 {
-	CalculateDimensions();
 	/*
 	mBackBuffer->Release();
 	mBackBufferView->Release();
@@ -35,7 +34,7 @@ Compositor::ResizeBuffers()
 	mBackBufferView = nullptr;
 
 	mSwapChain->ResizeBuffers(0, mWidth, mHeight, DXGI_FORMAT_UNKNOWN, 0);
-	InitBackBuffer();
+	PrepareDrawing();
 	*/
 }
 
@@ -123,28 +122,30 @@ Compositor::SetTextureSampling(ID3D11Texture2D* aTexture)
 }
 
 void
+Compositor::SetVertexBuffers(VertexData* aData)
+{
+	D3D11_MAPPED_SUBRESOURCE resource;
+	mContext->Map(mVertexBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &resource);
+	memcpy(resource.pData, aData, sizeof(VertexData) * 4);	// 4 vertices
+	mContext->Unmap(mVertexBuffer, NULL);
+}
+
+void
 Compositor::InitVertexBuffers(VertexData* aData)
 {
 	assert(aData);
-	if (mVertexBuffer) {
-		mVertexBuffer->Release();
-	}
-
 	D3D11_BUFFER_DESC bufferDesc;
 	memset(&bufferDesc, 0, sizeof(bufferDesc));
 
-	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	bufferDesc.Usage = D3D11_USAGE_DYNAMIC;	// Can be accessed by the CPU
 	bufferDesc.ByteWidth = sizeof(VertexData) * 4; // 4 because we always draw a square
 	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bufferDesc.CPUAccessFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA resourceData;
-	memset(&resourceData, 0, sizeof(D3D11_SUBRESOURCE_DATA));
-	resourceData.pSysMem = aData;
+	bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
 	// This uploads the data to the gpu
-	HRESULT result = mDevice->CreateBuffer(&bufferDesc, &resourceData, &mVertexBuffer);
+	HRESULT result = mDevice->CreateBuffer(&bufferDesc, NULL, &mVertexBuffer);
 	assert(SUCCESS(result));
+	SetVertexBuffers(aData);
 
 	UINT stride = sizeof(VertexData);
 	UINT offset = 0;
@@ -199,6 +200,7 @@ Compositor::InitViewport()
 void
 Compositor::PrepareDrawing()
 {
+	InitBackBuffer();
 	mContext->OMSetRenderTargets(1, &mBackBufferView, NULL);
 
 	InitViewport();
@@ -324,7 +326,6 @@ void
 Compositor::Composite(std::vector<HANDLE>& aHandles)
 {
 	int handleCount = aHandles.size();
-	PrepareDrawing();
 
 	int position = 0;
 	for (std::vector<HANDLE>::iterator it = aHandles.begin(); it != aHandles.end(); it++) {

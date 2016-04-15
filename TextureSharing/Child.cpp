@@ -98,8 +98,6 @@ Child::InitTextures()
 	for (int i = 0; i < mTextureCount; i++) {
 		mDraw->Draw(mTextures[i], mColors[i]);
 	}
-
-
 }
 
 void

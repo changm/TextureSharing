@@ -45,6 +45,7 @@ private:
 	void PrepareDrawing();
 	void CompileTextureShaders();
 	void InitVertexBuffers(VertexData* aData);
+	void SetVertexBuffers(VertexData* aData);
 	void SetInputLayout();
 	void SetIndexBuffers();
 	void SetTextureSampling(ID3D11Texture2D* aTexture);
