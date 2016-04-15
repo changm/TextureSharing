@@ -48,7 +48,7 @@ void Child::MessageLoop()
 			mHeight = (LONG) msg.data;
 			break;
 		}
-		case MESSAGES::INIT_DRAW:
+		case MESSAGES::INIT_CHILD_DRAW:
 		{
 			//printf("[Child] init draw\n");
 			assert(mWidth);
@@ -140,7 +140,7 @@ Child::SendSharedHandle(Texture* aTexture)
 	HANDLE sharedTexture = aTexture->GetSharedHandle();
 
 	MessageData sharedHandle = {
-		MESSAGES::HANDLE_MESSAGE,
+		MESSAGES::SHARED_HANDLE,
 		(DWORD)sharedTexture,
 	};
 

@@ -221,7 +221,7 @@ void Parent::InitChildDraw()
 
 	MessageData msgWidth = { MESSAGES::WIDTH, (int) width };
 	MessageData msgHeight = { MESSAGES::HEIGHT, (int) height };
-	MessageData initDraw = { MESSAGES::INIT_DRAW, 0 };
+	MessageData initDraw = { MESSAGES::INIT_CHILD_DRAW, 0 };
 
 	mPipe->SendMsg(&msgWidth);
 	mPipe->SendMsg(&msgHeight);
@@ -255,7 +255,7 @@ void Parent::ParentMessageLoop()
 	assert(Parent::IsCompositorThread());
 	while (mPipe->ReadMsg(&mChildMessages)) {
 		switch (mChildMessages.type) {
-		case MESSAGES::HANDLE_MESSAGE:
+		case MESSAGES::SHARED_HANDLE:
 		{
 			HANDLE sharedTextureHandle = (HANDLE) mChildMessages.data;
 			mSharedHandles.push_back(sharedTextureHandle);
@@ -263,7 +263,6 @@ void Parent::ParentMessageLoop()
 		}
 		case MESSAGES::CHILD_FINISH_DRAW:
 		{
-			printf("[Parent] Child Finished\n");
 			assert(mSyncHandle);
 			Compositor::GetCompositor(mOutputWindow)->Composite(mSharedHandles, mSyncHandle);
 			SendDrawOnly();
@@ -271,7 +270,6 @@ void Parent::ParentMessageLoop()
 		}
 		case MESSAGES::SYNC_TEXTURE_HANDLE:
 		{
-			printf("[Parent] Got Sync Handle\n");
 			mSyncHandle = (HANDLE) mChildMessages.data;
 			assert(mSyncHandle);
 			break;
