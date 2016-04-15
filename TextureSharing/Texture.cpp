@@ -16,10 +16,8 @@ Texture::~Texture()
 	mTexture->Release();
 	mTextureRenderTarget->Release();
 	mShaderResourceView->Release();
-
-	if (mMutex) {
-		mMutex->Release();
-	}
+	CloseHandle(mSharedHandle);
+	mMutex = nullptr;
 }
 
 void

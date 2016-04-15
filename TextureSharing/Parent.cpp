@@ -186,11 +186,12 @@ Parent::~Parent()
 {
 	// Message loop is closed after generate window
 	assert(CloseHandle(mMessageLoop));
+	// Handles closed on child side
 	mSharedHandles.clear();
 
 	mPipe->ClosePipe();
-	CloseHandle(mChildProcess.hProcess);
 	CloseHandle(mChildProcess.hThread);
+	CloseHandle(mChildProcess.hProcess);
 	delete mPipe;
 }
 
@@ -234,7 +235,6 @@ void Parent::ParentMessageLoop()
 		switch (mChildMessages.type) {
 		case MESSAGES::HANDLE_MESSAGE:
 		{
-			printf("[Parent] Got shared handle\n");
 			HANDLE sharedTextureHandle = (HANDLE) mChildMessages.data;
 			mSharedHandles.push_back(sharedTextureHandle);
 			break;
