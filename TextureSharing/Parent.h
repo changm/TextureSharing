@@ -15,6 +15,7 @@ public:
 	void ParentMessageLoop();
 	void SendDraw();
 	void InitChildDraw();
+	void SendDrawOnly();
 	static BOOL IsCompositorThread();
 	static DWORD sCompositorThread;
 

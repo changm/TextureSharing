@@ -227,6 +227,12 @@ void Parent::SendDraw()
 	mPipe->SendMsg(&draw);
 }
 
+void Parent::SendDrawOnly()
+{
+	MessageData draw = { MESSAGES::CHILD_DRAW, 0 };
+	mPipe->SendMsg(&draw);
+}
+
 void Parent::ParentMessageLoop()
 {
 	// Happens on message loop thread
@@ -243,6 +249,7 @@ void Parent::ParentMessageLoop()
 		{
 			printf("[Parent] Child Finished\n");
 			Compositor::GetCompositor(mOutputWindow)->Composite(mSharedHandles);
+			SendDrawOnly();
 			break;
 		}
 		default:

@@ -127,7 +127,6 @@ Child::SendDrawFinished()
 void
 Child::Draw()
 {
-	printf("[Child] Child Drawing\n");
 	FLOAT white[4];
 	InitColor(white, 1, 1, 1, 1);
 
