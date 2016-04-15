@@ -16,7 +16,7 @@
 
 #include "DeviceManager.h"
 
-#define USE_SYNC_TEXTURE TRUE
+#define USE_SYNC_TEXTURE FALSE
 
 #define MAX_LOADSTRING 100
 
@@ -51,6 +51,7 @@ About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 LRESULT CALLBACK
 WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+
 	switch (message)
 	{
 	case WM_COMMAND:
@@ -73,7 +74,6 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_PAINT:
 	{
 		PAINTSTRUCT ps;
-		printf("WM_PAINT request\n");
 		HDC hdc = BeginPaint(hWnd, &ps);
 		Compositor::GetCompositor(hWnd)->ResizeBuffers();
 		if (!sParent->mInitChild) {
@@ -109,6 +109,13 @@ Parent::CloseChild()
 	mPipe->ReadMsgSync(&childFinished);
 	printf("[Parent] FINISHED CLOSING child: %d\n", GetCurrentProcessId());
 	return;
+}
+
+void
+Parent::SendMsg(MESSAGES aMessage, DWORD aData)
+{
+	MessageData msg = { aMessage, aData };
+	mPipe->SendMsg(&msg);
 }
 
 HACCEL
@@ -151,39 +158,45 @@ Parent::CreateContentProcess()
 
 ATOM
 Parent::RegisterWindow(HINSTANCE hInstance) {
-    WNDCLASSEXW wcex;
-    wcex.cbSize = sizeof(WNDCLASSEX);
+	WNDCLASSEXW wcex;
+	wcex.cbSize = sizeof(WNDCLASSEX);
 
-    wcex.style          = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc    = WndProc;
-    wcex.cbClsExtra     = 0;
-    wcex.cbWndExtra     = 0;
-    wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_TEXTURESHARING));
-    wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_TEXTURESHARING);
-    wcex.lpszClassName  = szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+	wcex.style          = CS_HREDRAW | CS_VREDRAW;
+	wcex.lpfnWndProc    = WndProc;
+	wcex.cbClsExtra     = 0;
+	wcex.cbWndExtra     = 0;
+	wcex.hInstance      = hInstance;
+	wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_TEXTURESHARING));
+	wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
+	wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
+	wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_TEXTURESHARING);
+	wcex.lpszClassName  = szWindowClass;
+	wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
-    return RegisterClassExW(&wcex);
+	return RegisterClassExW(&wcex);
 }
 
 BOOL
 Parent::InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-   hInst = hInstance; // Store instance handle in our global variable
-	 sParent = this;
+  hInst = hInstance; // Store instance handle in our global variable
+	sParent = this;
 
+	 /*
    mOutputWindow = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+			*/
 
-   if (!mOutputWindow) {
-      return FALSE;
-   }
+	printf("Creating window with this: %x\n", this);
+  mOutputWindow = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, this);
 
-   ShowWindow(mOutputWindow, nCmdShow);
-   return TRUE;
+  if (!mOutputWindow) {
+     return FALSE;
+  }
+
+  ShowWindow(mOutputWindow, nCmdShow);
+  return TRUE;
 }
 
 Parent::Parent(HINSTANCE aInstance, int aCmdShow)
@@ -220,49 +233,31 @@ void Parent::InitChildDraw()
 	assert(width);
 	assert(height);
 
-	MessageData msgWidth = { MESSAGES::WIDTH, (int) width };
-	MessageData msgHeight = { MESSAGES::HEIGHT, (int) height };
-
-	mPipe->SendMsg(&msgWidth);
-	mPipe->SendMsg(&msgHeight);
+	SendMsg(MESSAGES::WIDTH, width);
+	SendMsg(MESSAGES::HEIGHT, height);
 
 	MESSAGES initMessage = USE_SYNC_TEXTURE ?
 		MESSAGES::INIT_CHILD_DRAW_SYNC_HANDLE :
 		MESSAGES::INIT_CHILD_DRAW;
 
-	MessageData initDraw = { initMessage, 0 };
-	mPipe->SendMsg(&initDraw);
+	SendMsg(initMessage);
 }
 
 void Parent::SendDraw()
 {
 	LONG width = Compositor::GetCompositor(mOutputWindow)->GetWidth();
 	LONG height = Compositor::GetCompositor(mOutputWindow)->GetHeight();
+	assert(width);
+	assert(height);
 
-	MessageData msgWidth = { MESSAGES::WIDTH, (int) width };
-	MessageData msgHeight = { MESSAGES::HEIGHT, (int) height };
-
-	mPipe->SendMsg(&msgWidth);
-	mPipe->SendMsg(&msgHeight);
+	SendMsg(MESSAGES::WIDTH, width);
+	SendMsg(MESSAGES::HEIGHT, height);
 
 	if (USE_SYNC_TEXTURE) {
-		SendDrawOnlySyncLock();
+		SendMsg(MESSAGES::CHILD_DRAW_WITH_SYNC_HANDLE);
 	} else {
-		SendDrawOnly();
+		SendMsg(MESSAGES::CHILD_DRAW);
 	}
-}
-
-void Parent::SendDrawOnly()
-{
-	MessageData draw = { MESSAGES::CHILD_DRAW, 0 };
-	mPipe->SendMsg(&draw);
-}
-
-void Parent::SendDrawOnlySyncLock()
-{
-	printf("Sending sync draw to child\n");
-	MessageData draw = { MESSAGES::CHILD_DRAW_WITH_SYNC_HANDLE, 0 };
-	mPipe->SendMsg(&draw);
 }
 
 void Parent::ParentMessageLoop()
@@ -279,18 +274,16 @@ void Parent::ParentMessageLoop()
 		}
 		case MESSAGES::CHILD_FINISH_DRAW:
 		{
-			printf("\n\nCompositing\n");
 			assert(mSyncHandle);
 			Compositor::GetCompositor(mOutputWindow)->Composite(mSharedHandles, mSyncHandle);
-			SendDrawOnly();
+			SendMsg(MESSAGES::CHILD_DRAW);
 			break;
 		}
 		case MESSAGES::CHILD_FINISH_DRAW_SYNC_HANDLE:
 		{
-			printf("\n\nCompositing with sync lock\n");
 			assert(mSyncHandle);
 			Compositor::GetCompositor(mOutputWindow)->CompositeWithSync(mSharedHandles, mSyncHandle);
-			SendDrawOnlySyncLock();
+			SendMsg(MESSAGES::CHILD_DRAW_WITH_SYNC_HANDLE);
 			break;
 		}
 		case MESSAGES::SYNC_TEXTURE_HANDLE:

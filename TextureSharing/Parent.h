@@ -11,12 +11,12 @@ public:
 	Parent(HINSTANCE aInstance, int nCmdShow);
 	~Parent();
 
+	void SendMsg(MESSAGES aMessage, DWORD aData = 0);
+
 	void GenerateWindow();
 	void ParentMessageLoop();
 	void SendDraw();
 	void InitChildDraw();
-	void SendDrawOnly();
-	void SendDrawOnlySyncLock();
 	static BOOL IsCompositorThread();
 	static DWORD sCompositorThread;
 	void CloseChild();

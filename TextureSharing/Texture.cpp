@@ -55,11 +55,8 @@ Texture::AllocateTexture(ID3D11Device* aDevice, ID3D11DeviceContext* aContext, L
 	CD3D11_TEXTURE2D_DESC bufferDesc(DXGI_FORMAT_B8G8R8A8_UNORM, aWidth, aHeight,
 																		1, 1, bindFlags);
 
-	// Shared w/o a mutex
-	//bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
 	UINT miscFlags = aUseMutex ? D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX : D3D11_RESOURCE_MISC_SHARED;
 	bufferDesc.MiscFlags = miscFlags;
-	//bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
 
 	HRESULT hr = aDevice->CreateTexture2D(&bufferDesc, nullptr, &texture->mTexture);
 	assert(hr == S_OK);

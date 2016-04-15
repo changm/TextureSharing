@@ -14,16 +14,13 @@ public:
 	void DrawWithSyncHandle();
 	void MessageLoop();
 	
-	void SendSharedHandle(Texture* aTexture);
-	void SendDrawFinished();
-	void SendSyncTexture();
-	void SendMsg(MESSAGES aMessage);
+	void InitSyncTexture();
+	void SendMsg(MESSAGES aMessage, DWORD aData = 0);
 
 private:
 	void InitColors(FLOAT aColors[][4]);
 	void InitTextures(bool aUseMutex);
 	void Clean();
-	void SendCloseFinish();
 
 	DeviceManager* mDeviceManager;
 	ChildPipe* mPipe;

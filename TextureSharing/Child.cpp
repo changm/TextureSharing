@@ -62,7 +62,6 @@ void Child::MessageLoop()
 		}
 		case MESSAGES::INIT_CHILD_DRAW_SYNC_HANDLE:
 		{
-			printf("[Child] init sync draw\n");
 			assert(mWidth);
 			assert(mHeight);
 			mDraw = new Drawing(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext());
@@ -74,9 +73,8 @@ void Child::MessageLoop()
 		}
 		case MESSAGES::CHILD_CLOSE_START:
 		{
-			printf("[Child] Child closing channel %d\n", GetCurrentProcessId());
 			Clean();
-			SendCloseFinish();
+			SendMsg(MESSAGES::CHILD_CLOSE_FINISH);
 			return;
 		}
 		case MESSAGES::CHILD_DRAW:
@@ -89,7 +87,6 @@ void Child::MessageLoop()
 		case MESSAGES::CHILD_DRAW_WITH_SYNC_HANDLE:
 		{
 			assert(mDraw);
-			printf("[Child] DRAW with sync %d\n", GetCurrentProcessId());
 			DrawWithSyncHandle();
 			break;
 		}
@@ -97,17 +94,6 @@ void Child::MessageLoop()
 			break;
 		}
 	}
-}
-
-void
-Child::SendCloseFinish()
-{
-	MessageData finishMessage = {
-		MESSAGES::CHILD_CLOSE_FINISH,
-		0,
-	};
-
-	mPipe->SendMsg(&finishMessage);
 }
 
 void
@@ -127,10 +113,10 @@ Child::InitTextures(bool aUseMutex)
 	// Only draw 4 textures for now
 	for (int i = 0; i < mTextureCount; i++) {
 		mTextures[i] = Texture::AllocateTexture(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), mWidth, mHeight, aUseMutex);
-		SendSharedHandle(mTextures[i]);
+		SendMsg(MESSAGES::SHARED_HANDLE, (DWORD) mTextures[i]->GetSharedHandle());
 	}
 
-	SendSyncTexture();
+	InitSyncTexture();
 
 	for (int i = 0; i < mTextureCount; i++) {
 		mDraw->Draw(mTextures[i], mColors[i]);
@@ -138,7 +124,7 @@ Child::InitTextures(bool aUseMutex)
 }
 
 void
-Child::SendSyncTexture()
+Child::InitSyncTexture()
 {
 	assert(mWidth);
 	assert(mHeight);
@@ -146,44 +132,14 @@ Child::SendSyncTexture()
 	mSyncTexture = SyncTexture::AllocateSyncTexture(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), mWidth, mHeight);
 	HANDLE syncTexture = mSyncTexture->GetSharedHandle();
 
-	MessageData sharedHandle = {
-		MESSAGES::SYNC_TEXTURE_HANDLE,
-		(DWORD)syncTexture,
-	};
-
-	printf("Child sending sync handle\n");
-	mPipe->SendMsg(&sharedHandle);
+	SendMsg(MESSAGES::SYNC_TEXTURE_HANDLE, (DWORD)mSyncTexture->GetSharedHandle());
 }
 
 void
-Child::SendSharedHandle(Texture* aTexture)
+Child::SendMsg(MESSAGES aMessage, DWORD aData)
 {
-	HANDLE sharedTexture = aTexture->GetSharedHandle();
-
-	MessageData sharedHandle = {
-		MESSAGES::SHARED_HANDLE,
-		(DWORD)sharedTexture,
-	};
-
-	mPipe->SendMsg(&sharedHandle);
-}
-
-void
-Child::SendMsg(MESSAGES aMessage)
-{
-	MessageData msg = { aMessage, 0 };
+	MessageData msg = { aMessage, aData };
 	mPipe->SendMsg(&msg);
-}
-
-void
-Child::SendDrawFinished()
-{
-	MessageData finishMessage = {
-		MESSAGES::CHILD_FINISH_DRAW,
-		0,
-	};
-
-	mPipe->SendMsg(&finishMessage);
 }
 
 void
@@ -220,5 +176,5 @@ Child::Draw()
 	}
 	*/
 
-	SendDrawFinished();
+	SendMsg(MESSAGES::CHILD_FINISH_DRAW);
 }
