@@ -44,7 +44,7 @@ private:
 	void DrawViaTextureShaders(ID3D11Texture2D* aTexture, VertexData* aLocation);
 	void PrepareDrawing();
 	void CompileTextureShaders();
-	void InitVertexBuffers(VertexData* aData);
+	void InitVertexBuffers();
 	void SetVertexBuffers(VertexData* aData);
 	void SetInputLayout();
 	void SetIndexBuffers();

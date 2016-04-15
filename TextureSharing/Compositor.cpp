@@ -131,9 +131,8 @@ Compositor::SetVertexBuffers(VertexData* aData)
 }
 
 void
-Compositor::InitVertexBuffers(VertexData* aData)
+Compositor::InitVertexBuffers()
 {
-	assert(aData);
 	D3D11_BUFFER_DESC bufferDesc;
 	memset(&bufferDesc, 0, sizeof(bufferDesc));
 
@@ -145,7 +144,6 @@ Compositor::InitVertexBuffers(VertexData* aData)
 	// This uploads the data to the gpu
 	HRESULT result = mDevice->CreateBuffer(&bufferDesc, NULL, &mVertexBuffer);
 	assert(SUCCESS(result));
-	SetVertexBuffers(aData);
 
 	UINT stride = sizeof(VertexData);
 	UINT offset = 0;
@@ -207,6 +205,7 @@ Compositor::PrepareDrawing()
 	CompileTextureShaders();
 	SetInputLayout();
 	SetIndexBuffers();
+	InitVertexBuffers();
 	mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
@@ -214,7 +213,7 @@ Compositor::PrepareDrawing()
 void
 Compositor::DrawViaTextureShaders(ID3D11Texture2D* aTexture, VertexData* aLocation)
 {
-	InitVertexBuffers(aLocation);
+	SetVertexBuffers(aLocation);
 	SetTextureSampling(aTexture);
 
 	// Finally draw the 6 vertices we have
@@ -297,8 +296,6 @@ Compositor::CompositeSolo()
 		drawing.Draw(textures[i], colors[i]);
 	}
 
-	PrepareDrawing();
-
 	DrawViaTextureShaders(textures[0], FullScreen);
 	mSwapChain->Present(0, 0);
 	DrawViaTextureShaders(textures[1], TopRight);
@@ -309,16 +306,6 @@ Compositor::CompositeSolo()
 	for (int i = 0; i < size; i++) {
 		delete textures[i];
 	}
-
-	Texture* texture = Texture::AllocateTexture(mDevice, mContext, mWidth, mHeight);
-	
-	drawing.Draw(texture);
-
-	texture->Lock();
-	CopyToBackBuffer(texture->GetTexture());
-	texture->Unlock();
-	mSwapChain->Present(0, 0);
-	delete texture;
 	*/
 }
 
@@ -326,8 +313,8 @@ void
 Compositor::Composite(std::vector<HANDLE>& aHandles)
 {
 	int handleCount = aHandles.size();
-
 	int position = 0;
+
 	for (std::vector<HANDLE>::iterator it = aHandles.begin(); it != aHandles.end(); it++) {
 		HANDLE handle = *it;
 		ID3D11Texture2D* sharedTexture;
