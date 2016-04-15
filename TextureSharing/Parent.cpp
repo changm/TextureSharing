@@ -192,14 +192,16 @@ Parent::Parent(HINSTANCE aInstance, int aCmdShow)
 	mPipe->CreateServerPipe();
 	CreateContentProcess();
 	mPipe->WaitForChild();
-
-	mCompositorHandle = CreateEvent(NULL, TRUE, FALSE, L"CompositorHandle");
 }
 
 Parent::~Parent()
 {
-	// Message loop is closed after generate window
-	assert(CloseHandle(mMessageLoop));
+	// Clean before we report live objects to see what's left and leak check
+	Compositor::GetCompositor(mOutputWindow)->Clean();
+	Compositor::GetCompositor(mOutputWindow)->ReportLiveObjects();
+	delete Compositor::GetCompositor(mOutputWindow);
+
+	CloseHandle(mMessageLoop);
 	// Handles closed on child side
 	mSharedHandles.clear();
 

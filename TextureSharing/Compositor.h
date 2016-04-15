@@ -21,6 +21,8 @@ public:
 	LONG GetWidth() { return mWidth; }
 	LONG GetHeight() { return mHeight; }
 	void ResizeBuffers();
+	void ReportLiveObjects();
+	void Clean();
 
 private:
 	void InitViewport();

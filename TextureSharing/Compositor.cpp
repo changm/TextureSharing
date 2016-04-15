@@ -22,11 +22,16 @@ Compositor::Compositor(HWND aOutputWindow)
 	mDeviceManager->CreateSwapChain(&mSwapChain, mWidth, mHeight, mOutputWindow);
 
 	mMutex = CreateMutex(NULL, false, L"CompositorMutex");
-
 	PrepareDrawing();
 }
 
 Compositor::~Compositor()
+{
+	delete mDeviceManager;
+}
+
+void
+Compositor::Clean()
 {
 	mVertexBuffer->Release();
 	mVertexShader->Release();
@@ -37,7 +42,6 @@ Compositor::~Compositor()
 	mSwapChain->Release();
 	mBackBuffer->Release();
 	mBackBufferView->Release();
-	delete mDeviceManager;
 }
 
 void
@@ -116,6 +120,7 @@ Compositor::SetInputLayout()
 							&inputLayout);
 	assert(SUCCESS(result));
 	mContext->IASetInputLayout(inputLayout);
+	inputLayout->Release();
 }
 
 void
@@ -130,6 +135,9 @@ Compositor::SetTextureSampling(ID3D11Texture2D* aTexture)
 
 	mContext->PSSetShaderResources(0, 1, &mTextureView);
 	mContext->PSSetSamplers(0, 1, &mSamplerState);
+
+	mSamplerState->Release();
+	mTextureView->Release();
 }
 
 void
@@ -323,6 +331,12 @@ Compositor::CompositeSolo()
 }
 
 void
+Compositor::ReportLiveObjects()
+{
+	mDeviceManager->ReportLiveObjects();
+}
+
+void
 Compositor::Composite(std::vector<HANDLE>& aHandles)
 {
 	WaitForSingleObject(mMutex, INFINITE);
@@ -342,6 +356,7 @@ Compositor::Composite(std::vector<HANDLE>& aHandles)
 
 		DrawViaTextureShaders(sharedTexture, POSITIONS[position++]);
 
+		sharedTexture->Release();
 		mutex->ReleaseSync(0);
 		mutex->Release();
 	}

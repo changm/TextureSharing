@@ -16,6 +16,7 @@ public:
 	ID3D11Device* GetDevice() { return mDevice; }
 	ID3D11DeviceContext* GetDeviceContext() { return mContext; }
 	void CreateSwapChain(IDXGISwapChain** aOutSwapChain, LONG aWidth, LONG aHeight, HWND aOutputWindow);
+	void ReportLiveObjects();
 
 private:
 	// Init all the things

@@ -6,6 +6,8 @@
 #include <d3d11.h>
 #include <d2d1.h>
 #include <d3dcompiler.h>
+#include <D3D11SDKLayers.h>
+#include <DXGIDebug.h>
 
 #include "Vertex.h"
 #include <DirectXMath.h>
@@ -27,6 +29,15 @@ DeviceManager::~DeviceManager()
 	mContext->Release();
 	mAdapter->Release();
 	mD2DFactory->Release();
+}
+
+void DeviceManager::ReportLiveObjects()
+{
+	ID3D11Debug* debug;
+	mDevice->QueryInterface(__uuidof(ID3D11Debug), (void**)&debug);
+	//debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_DETAIL);
+	debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+	debug->Release();
 }
 
 void DeviceManager::InitD3D()

@@ -24,21 +24,17 @@ void
 Texture::Lock()
 {
 	mTexture->QueryInterface(__uuidof(IDXGIKeyedMutex), (void**)&mMutex);
-	if (mMutex) {
-		HRESULT hr = mMutex->AcquireSync(0, 10000);
-		assert(SUCCESS(hr));
-	}
+	HRESULT hr = mMutex->AcquireSync(0, 10000);
+	assert(SUCCESS(hr));
 }
 
 void
 Texture::Unlock()
 {
-	if (mMutex) {
-		HRESULT hr = mMutex->ReleaseSync(0);
-		assert(SUCCESS(hr));
-		mMutex->Release();
-		mMutex = nullptr;
-	}
+	HRESULT hr = mMutex->ReleaseSync(0);
+	assert(SUCCESS(hr));
+	mMutex->Release();
+	mMutex = nullptr;
 }
 
 /* static */ Texture*

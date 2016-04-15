@@ -142,10 +142,22 @@ Child::Draw()
 	FLOAT white[4];
 	InitColor(white, 1, 1, 1, 1);
 
+	/*
+	for (int i = 0; i < mTextureCount; i++) {
+		mTextures[i]->Lock();
+	}
+	*/
+
 	for (int i = 0; i < mTextureCount; i++) {
 		mDraw->Draw(mTextures[i], white);
 		mDraw->Draw(mTextures[i], mColors[i]);
 	}
+
+	/*
+	for (int i = 0; i < mTextureCount; i++) {
+		mTextures[i]->Unlock();
+	}
+	*/
 
 	SendDrawFinished();
 }
