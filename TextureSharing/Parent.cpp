@@ -16,6 +16,8 @@
 
 #include "DeviceManager.h"
 
+#define USE_SYNC_TEXTURE FALSE
+
 #define MAX_LOADSTRING 100
 
 // Global Variables:
@@ -213,7 +215,6 @@ Parent::~Parent()
 
 void Parent::InitChildDraw()
 {
-	//assert(Parent::IsCompositorThread());
 	LONG width = Compositor::GetCompositor(mOutputWindow)->GetWidth();
 	LONG height = Compositor::GetCompositor(mOutputWindow)->GetHeight();
 	assert(width);
@@ -221,31 +222,45 @@ void Parent::InitChildDraw()
 
 	MessageData msgWidth = { MESSAGES::WIDTH, (int) width };
 	MessageData msgHeight = { MESSAGES::HEIGHT, (int) height };
-	MessageData initDraw = { MESSAGES::INIT_CHILD_DRAW, 0 };
 
 	mPipe->SendMsg(&msgWidth);
 	mPipe->SendMsg(&msgHeight);
+
+	MESSAGES initMessage = USE_SYNC_TEXTURE ?
+		MESSAGES::INIT_CHILD_DRAW_SYNC_HANDLE :
+		MESSAGES::INIT_CHILD_DRAW;
+
+	MessageData initDraw = { initMessage, 0 };
 	mPipe->SendMsg(&initDraw);
 }
 
 void Parent::SendDraw()
 {
-	//assert(Parent::IsCompositorThread());
 	LONG width = Compositor::GetCompositor(mOutputWindow)->GetWidth();
 	LONG height = Compositor::GetCompositor(mOutputWindow)->GetHeight();
 
 	MessageData msgWidth = { MESSAGES::WIDTH, (int) width };
 	MessageData msgHeight = { MESSAGES::HEIGHT, (int) height };
-	MessageData draw = { MESSAGES::CHILD_DRAW, 0 };
 
 	mPipe->SendMsg(&msgWidth);
 	mPipe->SendMsg(&msgHeight);
-	mPipe->SendMsg(&draw);
+
+	if (USE_SYNC_TEXTURE) {
+		SendDrawOnlySyncLock();
+	} else {
+		SendDrawOnly();
+	}
 }
 
 void Parent::SendDrawOnly()
 {
 	MessageData draw = { MESSAGES::CHILD_DRAW, 0 };
+	mPipe->SendMsg(&draw);
+}
+
+void Parent::SendDrawOnlySyncLock()
+{
+	MessageData draw = { MESSAGES::CHILD_DRAW_WITH_SYNC_HANDLE, 0 };
 	mPipe->SendMsg(&draw);
 }
 
@@ -263,10 +278,18 @@ void Parent::ParentMessageLoop()
 		}
 		case MESSAGES::CHILD_FINISH_DRAW:
 		{
-			//printf("\n\nCompositing\n");
+			printf("\n\nCompositing\n");
 			assert(mSyncHandle);
 			Compositor::GetCompositor(mOutputWindow)->Composite(mSharedHandles, mSyncHandle);
 			SendDrawOnly();
+			break;
+		}
+		case MESSAGES::CHILD_FINISH_DRAW_SYNC_HANDLE:
+		{
+			printf("\n\nCompositing with sync lock\n");
+			assert(mSyncHandle);
+			Compositor::GetCompositor(mOutputWindow)->CompositeWithSync(mSharedHandles, mSyncHandle);
+			SendDrawOnlySyncLock();
 			break;
 		}
 		case MESSAGES::SYNC_TEXTURE_HANDLE:

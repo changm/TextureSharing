@@ -15,6 +15,7 @@ public:
 
 	// Draws to this texture
 	void Draw(Texture* aTexture, FLOAT* aColor);
+	void DrawNoLock(Texture* aTexture, FLOAT* aColor);
 	~Drawing();
 
 private:
@@ -22,7 +23,6 @@ private:
 	void SetViewport(Texture* aTexture);
 	void UpdateConstantBuffers();
 	void SetMatrices(Texture* aTexture);
-	void UpdateVertexData(FLOAT* aColor);
 	void UploadVertices(FLOAT* aColor);
 	void InitVertexBuffers();
 	void SetInputLayout();

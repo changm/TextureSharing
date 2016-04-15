@@ -16,7 +16,7 @@ public:
 	~Compositor();
 
 	void Composite(std::vector<HANDLE>& aSharedHandles, HANDLE aSyncHandle);
-	void CompositeSolo();
+	void CompositeWithSync(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle);
 	static Compositor* GetCompositor(HWND aOutputWindow);
 	LONG GetWidth() { return mWidth; }
 	LONG GetHeight() { return mHeight; }

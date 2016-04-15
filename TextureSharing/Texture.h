@@ -8,7 +8,7 @@ public:
 	Texture(LONG aWidth, LONG aHeight);
 	~Texture();
 
-	static Texture* AllocateTexture(ID3D11Device* aDevice, ID3D11DeviceContext* aContext, LONG aWidth, LONG aHeight);
+	static Texture* AllocateTexture(ID3D11Device* aDevice, ID3D11DeviceContext* aContext, LONG aWidth, LONG aHeight, bool aUseMutex);
 	ID3D11Texture2D* GetTexture() {
 		return mTexture;
 	}

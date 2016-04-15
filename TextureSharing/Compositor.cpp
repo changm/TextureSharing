@@ -37,6 +37,8 @@ Compositor::~Compositor()
 void
 Compositor::Clean()
 {
+	mDevice->Release();
+	mContext->Release();
 	mVertexBuffer->Release();
 	mVertexShader->Release();
 	mIndexBuffer->Release();
@@ -301,40 +303,6 @@ Compositor::InitColors(FLOAT aColors[][4], int aCount)
 	InitColor(aColors[5], 0.5, 0.5, 0.5, 1);
 }
 
-void
-Compositor::CompositeSolo()
-{
-	/*
-	if (!mSharedHandle) {
-		return;
-	}
-	Composite(mSharedHandle);
-
-	const int size = 6;
-	FLOAT colors[size][4];
-	Texture* textures[size];
-	InitColors(colors, size);
-
-	Drawing drawing(mDevice, mContext);
-
-	for (int i = 0; i < size; i++) {
-		textures[i] = Texture::AllocateTexture(mDevice, mContext, mWidth, mHeight);
-		drawing.Draw(textures[i], colors[i]);
-	}
-
-	DrawViaTextureShaders(textures[0], FullScreen);
-	mSwapChain->Present(0, 0);
-	DrawViaTextureShaders(textures[1], TopRight);
-	DrawViaTextureShaders(textures[2], BottomLeft);
-	DrawViaTextureShaders(textures[3], BottomRight);
-	mSwapChain->Present(0, 0);
-
-	for (int i = 0; i < size; i++) {
-		delete textures[i];
-	}
-	*/
-}
-
 /*
  * Don't need to actually do anything with the texture, we hope this forces a flush.
  */
@@ -363,6 +331,31 @@ Compositor::ReportLiveObjects()
 }
 
 void
+Compositor::CompositeWithSync(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle)
+{
+	WaitForSingleObject(mMutex, INFINITE);
+	LockSyncHandle(aSyncHandle);
+
+	int handleCount = aHandles.size();
+	int position = 0;
+
+	for (std::vector<HANDLE>::iterator it = aHandles.begin(); it != aHandles.end(); it++) {
+		HANDLE handle = *it;
+		ID3D11Texture2D* sharedTexture;
+		HRESULT hr = mDevice->OpenSharedResource(handle, __uuidof(ID3D11Texture2D), (void**)&sharedTexture);
+		assert(SUCCESS(hr));
+
+		DrawViaTextureShaders(sharedTexture, POSITIONS[position++]);
+		sharedTexture->Release();
+	}
+
+	mContext->Flush();
+
+	mSwapChain->Present(0, 0);
+	ReleaseMutex(mMutex);
+}
+
+void
 Compositor::Composite(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle)
 {
 	WaitForSingleObject(mMutex, INFINITE);
@@ -386,6 +379,8 @@ Compositor::Composite(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle)
 		mutex->ReleaseSync(0);
 		mutex->Release();
 	}
+
+	mContext->Flush();
 
 	mSwapChain->Present(0, 0);
 	ReleaseMutex(mMutex);

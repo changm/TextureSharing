@@ -38,7 +38,7 @@ Texture::Unlock()
 }
 
 /* static */ Texture*
-Texture::AllocateTexture(ID3D11Device* aDevice, ID3D11DeviceContext* aContext, LONG aWidth, LONG aHeight)
+Texture::AllocateTexture(ID3D11Device* aDevice, ID3D11DeviceContext* aContext, LONG aWidth, LONG aHeight, bool aUseMutex)
 {
 	assert(aWidth);
 	assert(aHeight);
@@ -52,7 +52,9 @@ Texture::AllocateTexture(ID3D11Device* aDevice, ID3D11DeviceContext* aContext, L
 
 	// Shared w/o a mutex
 	//bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
-	bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
+	UINT miscFlags = aUseMutex ? D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX : D3D11_RESOURCE_MISC_SHARED;
+	bufferDesc.MiscFlags = miscFlags;
+	//bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
 
 	HRESULT hr = aDevice->CreateTexture2D(&bufferDesc, nullptr, &texture->mTexture);
 	assert(hr == S_OK);

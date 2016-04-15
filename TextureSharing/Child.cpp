@@ -55,7 +55,21 @@ void Child::MessageLoop()
 			assert(mHeight);
 			mDraw = new Drawing(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext());
 			InitColors(mColors);
-			InitTextures();
+			bool useMutex = true;
+			InitTextures(useMutex);
+			InitColor(white, 1, 1, 1, 1);
+			break;
+		}
+		case MESSAGES::INIT_CHILD_DRAW_SYNC_HANDLE:
+		{
+			//printf("[Child] init draw\n");
+			assert(mWidth);
+			assert(mHeight);
+			mDraw = new Drawing(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext());
+			InitColors(mColors);
+			bool useMutex = false;
+			InitTextures(useMutex);
+			InitColor(white, 1, 1, 1, 1);
 			break;
 		}
 		case MESSAGES::CHILD_CLOSE_START:
@@ -70,6 +84,13 @@ void Child::MessageLoop()
 			assert(mDraw);
 			//printf("[Child] DRAW %d\n", GetCurrentProcessId());
 			Draw();
+			break;
+		}
+		case MESSAGES::CHILD_DRAW_WITH_SYNC_HANDLE:
+		{
+			assert(mDraw);
+			//printf("[Child] DRAW %d\n", GetCurrentProcessId());
+			DrawWithSyncHandle();
 			break;
 		}
 		default:
@@ -101,11 +122,11 @@ Child::InitColors(FLOAT aColors[][4])
 }
 
 void
-Child::InitTextures()
+Child::InitTextures(bool aUseMutex)
 {
 	// Only draw 4 textures for now
 	for (int i = 0; i < mTextureCount; i++) {
-		mTextures[i] = Texture::AllocateTexture(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), mWidth, mHeight);
+		mTextures[i] = Texture::AllocateTexture(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), mWidth, mHeight, aUseMutex);
 		SendSharedHandle(mTextures[i]);
 	}
 
@@ -159,11 +180,20 @@ Child::SendDrawFinished()
 }
 
 void
+Child::DrawWithSyncHandle()
+{
+	for (int i = 0; i < mTextureCount; i++) {
+		mDraw->DrawNoLock(mTextures[i], white);
+		mDraw->DrawNoLock(mTextures[i], mColors[i]);
+	}
+
+	mSyncTexture->Lock();
+	mSyncTexture->Unlock();
+}
+
+void
 Child::Draw()
 {
-	FLOAT white[4];
-	InitColor(white, 1, 1, 1, 1);
-
 	/*
 	for (int i = 0; i < mTextureCount; i++) {
 		mTextures[i]->Lock();

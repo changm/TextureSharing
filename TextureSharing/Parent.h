@@ -16,6 +16,7 @@ public:
 	void SendDraw();
 	void InitChildDraw();
 	void SendDrawOnly();
+	void SendDrawOnlySyncLock();
 	static BOOL IsCompositorThread();
 	static DWORD sCompositorThread;
 	void CloseChild();

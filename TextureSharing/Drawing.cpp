@@ -251,8 +251,8 @@ Drawing::SetInputLayout()
 	inputLayout->Release();
 }
 
-void Drawing::Draw(Texture* aTexture, FLOAT* aColor) {
-	aTexture->Lock();
+void Drawing::DrawNoLock(Texture* aTexture, FLOAT* aColor)
+{
 	SetRenderTarget(aTexture);
 	SetViewport(aTexture);
 	SetMatrices(aTexture);
@@ -261,5 +261,11 @@ void Drawing::Draw(Texture* aTexture, FLOAT* aColor) {
 	UploadVertices(aColor);
 
 	mContext->DrawIndexed(mIndexCount, 0, 0);
+	mContext->Flush();
+}
+
+void Drawing::Draw(Texture* aTexture, FLOAT* aColor) {
+	aTexture->Lock();
+	DrawNoLock(aTexture, aColor);
 	aTexture->Unlock();
 }
