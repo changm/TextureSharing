@@ -264,8 +264,16 @@ void Parent::ParentMessageLoop()
 		case MESSAGES::CHILD_FINISH_DRAW:
 		{
 			printf("[Parent] Child Finished\n");
-			Compositor::GetCompositor(mOutputWindow)->Composite(mSharedHandles);
+			assert(mSyncHandle);
+			Compositor::GetCompositor(mOutputWindow)->Composite(mSharedHandles, mSyncHandle);
 			SendDrawOnly();
+			break;
+		}
+		case MESSAGES::SYNC_TEXTURE_HANDLE:
+		{
+			printf("[Parent] Got Sync Handle\n");
+			mSyncHandle = (HANDLE) mChildMessages.data;
+			assert(mSyncHandle);
 			break;
 		}
 		default:

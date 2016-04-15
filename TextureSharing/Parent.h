@@ -41,5 +41,5 @@ private:
 	HANDLE mMessageLoop;
 
 	std::vector<HANDLE> mSharedHandles;
-	HANDLE mCompositorHandle;
+	HANDLE mSyncHandle;	// Our sync handle that is locked last on content, first on parent
 };

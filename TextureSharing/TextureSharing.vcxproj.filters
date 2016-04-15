@@ -57,6 +57,9 @@
     <ClInclude Include="VertexData.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
+    <ClInclude Include="SyncTexture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -84,6 +87,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Pipe.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SyncTexture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

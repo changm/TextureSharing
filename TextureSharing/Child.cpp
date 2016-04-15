@@ -3,6 +3,7 @@
 #include "DeviceManager.h"
 #include "Drawing.h"
 #include <stdio.h>
+#include "SyncTexture.h"
 
 Child::Child()
 {
@@ -23,6 +24,7 @@ void Child::Clean()
 		delete mTextures[i];
 	}
 
+	delete mSyncTexture;
 	delete mDraw;
 	delete mDeviceManager;
 }
@@ -107,9 +109,29 @@ Child::InitTextures()
 		SendSharedHandle(mTextures[i]);
 	}
 
+	SendSyncTexture();
+
 	for (int i = 0; i < mTextureCount; i++) {
 		mDraw->Draw(mTextures[i], mColors[i]);
 	}
+}
+
+void
+Child::SendSyncTexture()
+{
+	assert(mWidth);
+	assert(mHeight);
+
+	mSyncTexture = SyncTexture::AllocateSyncTexture(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), mWidth, mHeight);
+	HANDLE syncTexture = mSyncTexture->GetSharedHandle();
+
+	MessageData sharedHandle = {
+		MESSAGES::SYNC_TEXTURE_HANDLE,
+		(DWORD)syncTexture,
+	};
+
+	printf("Child sending sync handle\n");
+	mPipe->SendMsg(&sharedHandle);
 }
 
 void

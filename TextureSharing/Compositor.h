@@ -15,7 +15,7 @@ public:
 	Compositor(HWND aOutputWindow);
 	~Compositor();
 
-	void Composite(std::vector<HANDLE>& aSharedHandles);
+	void Composite(std::vector<HANDLE>& aSharedHandles, HANDLE aSyncHandle);
 	void CompositeSolo();
 	static Compositor* GetCompositor(HWND aOutputWindow);
 	LONG GetWidth() { return mWidth; }
@@ -31,6 +31,7 @@ private:
 	void CopyToBackBuffer(ID3D11Texture2D* aTexture);
 	void InitBackBuffer();
 	void InitColors(FLOAT aColors[][4], int aCount);
+	void LockSyncHandle(HANDLE aSyncHandle);
 
 	HWND mOutputWindow;
 	static Compositor* mCompositor;

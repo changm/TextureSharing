@@ -2,6 +2,7 @@
 
 class DeviceManager;
 class ChildPipe;
+class SyncTexture;
 
 class Child
 {
@@ -14,6 +15,7 @@ public:
 	
 	void SendSharedHandle(Texture* aTexture);
 	void SendDrawFinished();
+	void SendSyncTexture();
 
 private:
 	void InitColors(FLOAT aColors[][4]);
@@ -32,4 +34,5 @@ private:
 	FLOAT mColors[6][4];
 	// draw 4 textures
 	Texture* mTextures[mTextureCount];
+	SyncTexture* mSyncTexture;
 };

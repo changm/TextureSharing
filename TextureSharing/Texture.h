@@ -26,8 +26,7 @@ public:
 	LONG GetWidth() { return mWidth; }
 	LONG GetHeight() { return mHeight; }
 
-
-private:
+protected:
 	void InitTextureRenderTarget(ID3D11Device* aDevice);
 	void InitShaderResourceView(ID3D11Device* aDevice);
 

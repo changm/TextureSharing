@@ -330,6 +330,27 @@ Compositor::CompositeSolo()
 	*/
 }
 
+/*
+ * Don't need to actually do anything with the texture, we hope this forces a flush.
+ */
+void
+Compositor::LockSyncHandle(HANDLE aSyncHandle)
+{
+	assert(aSyncHandle);
+	ID3D11Texture2D* sharedTexture;
+	HRESULT hr = mDevice->OpenSharedResource(aSyncHandle, __uuidof(ID3D11Texture2D), (void**)&sharedTexture);
+	assert(SUCCESS(hr));
+
+	IDXGIKeyedMutex* mutex;
+	sharedTexture->QueryInterface(__uuidof(IDXGIKeyedMutex), (void**)&mutex);
+	hr = mutex->AcquireSync(0, 10000);
+	assert(SUCCESS(hr));
+
+	sharedTexture->Release();
+	mutex->ReleaseSync(0);
+	mutex->Release();
+}
+
 void
 Compositor::ReportLiveObjects()
 {
@@ -337,7 +358,7 @@ Compositor::ReportLiveObjects()
 }
 
 void
-Compositor::Composite(std::vector<HANDLE>& aHandles)
+Compositor::Composite(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle)
 {
 	WaitForSingleObject(mMutex, INFINITE);
 	int handleCount = aHandles.size();
