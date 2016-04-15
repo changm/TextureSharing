@@ -18,6 +18,8 @@ public:
 private:
 	void InitColors(FLOAT aColors[][4]);
 	void InitTextures();
+	void Clean();
+	void SendCloseFinish();
 
 	DeviceManager* mDeviceManager;
 	ChildPipe* mPipe;

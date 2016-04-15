@@ -14,38 +14,41 @@ Child::Child()
 
 Child::~Child()
 {
+	delete mPipe;
+}
+
+void Child::Clean()
+{
 	for (int i = 0; i < mTextureCount; i++) {
 		delete mTextures[i];
 	}
 
 	delete mDraw;
 	delete mDeviceManager;
-	delete mPipe;
 }
 
 void Child::MessageLoop()
 {
 	MessageData msg;
-	printf("Child message loop start\n");
 	while (mPipe->ReadMsg(&msg))
 	{
 		switch(msg.type)
 		{
 		case MESSAGES::WIDTH:
 		{
-			printf("[Child] width\n");
+			//printf("[Child] width\n");
 			mWidth = (LONG) msg.data;
 			break;
 		}
 		case MESSAGES::HEIGHT:
 		{
-			printf("[Child] height\n");
+			//printf("[Child] height\n");
 			mHeight = (LONG) msg.data;
 			break;
 		}
 		case MESSAGES::INIT_DRAW:
 		{
-			printf("[Child] init draw\n");
+			//printf("[Child] init draw\n");
 			assert(mWidth);
 			assert(mHeight);
 			mDraw = new Drawing(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext());
@@ -53,26 +56,35 @@ void Child::MessageLoop()
 			InitTextures();
 			break;
 		}
-		case MESSAGES::CLOSE:
+		case MESSAGES::CHILD_CLOSE_START:
 		{
-			printf("[Child] Child closing channel\n");
+			printf("[Child] Child closing channel %d\n", GetCurrentProcessId());
+			Clean();
+			SendCloseFinish();
 			return;
 		}
 		case MESSAGES::CHILD_DRAW:
 		{
-			assert(mDraw, "asked to draw before we initialized drawing");
-			printf("[Child] DRAW\n");
+			assert(mDraw);
+			printf("[Child] DRAW %d\n", GetCurrentProcessId());
 			Draw();
 			break;
 		}
 		default:
 			break;
 		}
-
-		printf("[Child] waiting on messages\n");
-		DWORD waitReturn = WaitForSingleObjectEx(mPipe->GetPipe(), INFINITE, TRUE);
-		printf("[Child] finished waiting %d\n", waitReturn);
 	}
+}
+
+void
+Child::SendCloseFinish()
+{
+	MessageData finishMessage = {
+		MESSAGES::CHILD_CLOSE_FINISH,
+		0,
+	};
+
+	mPipe->SendMsg(&finishMessage);
 }
 
 void
@@ -117,7 +129,7 @@ void
 Child::SendDrawFinished()
 {
 	MessageData finishMessage = {
-		MESSAGES::CHILD_FINISHED,
+		MESSAGES::CHILD_FINISH_DRAW,
 		0,
 	};
 

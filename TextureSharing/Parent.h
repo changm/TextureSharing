@@ -18,6 +18,7 @@ public:
 	void SendDrawOnly();
 	static BOOL IsCompositorThread();
 	static DWORD sCompositorThread;
+	void CloseChild();
 
 	bool mInitChild;
 

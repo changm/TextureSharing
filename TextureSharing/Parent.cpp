@@ -84,6 +84,7 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	break;
 	case WM_DESTROY:
 	{
+		sParent->CloseChild();
 		PostQuitMessage(0);
 		break;
 	}
@@ -93,6 +94,19 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 	} // end switch
 	return 0;
+}
+
+void
+Parent::CloseChild()
+{
+	printf("[Parent] closing child: %d\n", GetCurrentProcessId());
+	MessageData closeChild = { MESSAGES::CHILD_CLOSE_START, 0 };
+	mPipe->SendMsgSync(&closeChild);
+
+	MessageData childFinished;
+	mPipe->ReadMsgSync(&childFinished);
+	printf("[Parent] FINISHED CLOSING child: %d\n", GetCurrentProcessId());
+	return;
 }
 
 HACCEL
@@ -245,7 +259,7 @@ void Parent::ParentMessageLoop()
 			mSharedHandles.push_back(sharedTextureHandle);
 			break;
 		}
-		case MESSAGES::CHILD_FINISHED:
+		case MESSAGES::CHILD_FINISH_DRAW:
 		{
 			printf("[Parent] Child Finished\n");
 			Compositor::GetCompositor(mOutputWindow)->Composite(mSharedHandles);
