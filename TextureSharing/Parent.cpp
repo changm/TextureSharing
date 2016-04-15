@@ -75,12 +75,6 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hWnd, &ps);
-		Compositor::GetCompositor(hWnd)->ResizeBuffers();
-		if (!sParent->mInitChild) {
-			sParent->InitChildDraw();
-			sParent->mInitChild = true;
-		}
-		sParent->SendDraw();
 		EndPaint(hWnd, &ps);
 	}
 	break;
@@ -107,7 +101,8 @@ Parent::CloseChild()
 
 	MessageData childFinished;
 	mPipe->ReadMsgSync(&childFinished);
-	printf("[Parent] FINISHED CLOSING child: %d\n", GetCurrentProcessId());
+	printf("[Parent] Finished closing child: %d\n", GetCurrentProcessId());
+	mPipe->ClosePipe();
 	return;
 }
 
@@ -182,14 +177,8 @@ Parent::InitInstance(HINSTANCE hInstance, int nCmdShow)
   hInst = hInstance; // Store instance handle in our global variable
 	sParent = this;
 
-	 /*
    mOutputWindow = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
-			*/
-
-	printf("Creating window with this: %x\n", this);
-  mOutputWindow = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, this);
 
   if (!mOutputWindow) {
      return FALSE;
@@ -220,7 +209,6 @@ Parent::~Parent()
 	// Handles closed on child side
 	mSharedHandles.clear();
 
-	mPipe->ClosePipe();
 	CloseHandle(mChildProcess.hThread);
 	CloseHandle(mChildProcess.hProcess);
 	delete mPipe;
@@ -228,6 +216,7 @@ Parent::~Parent()
 
 void Parent::InitChildDraw()
 {
+	assert(Parent::IsCompositorThread());
 	LONG width = Compositor::GetCompositor(mOutputWindow)->GetWidth();
 	LONG height = Compositor::GetCompositor(mOutputWindow)->GetHeight();
 	assert(width);
@@ -245,6 +234,7 @@ void Parent::InitChildDraw()
 
 void Parent::SendDraw()
 {
+	assert(Parent::IsCompositorThread());
 	LONG width = Compositor::GetCompositor(mOutputWindow)->GetWidth();
 	LONG height = Compositor::GetCompositor(mOutputWindow)->GetHeight();
 	assert(width);
@@ -274,6 +264,7 @@ void Parent::ParentMessageLoop()
 		}
 		case MESSAGES::CHILD_FINISH_DRAW:
 		{
+			printf("Parent finish draw\n");
 			assert(mSyncHandle);
 			Compositor::GetCompositor(mOutputWindow)->Composite(mSharedHandles, mSyncHandle);
 			SendMsg(MESSAGES::CHILD_DRAW);
@@ -307,6 +298,8 @@ Parent::IsCompositorThread()
 static DWORD PaintLoop(void* aParentInstance)
 {
 	Parent* parent = (Parent*)aParentInstance;
+	Compositor::GetCompositor(parent->mOutputWindow)->ResizeBuffers();
+	parent->InitChildDraw();
 	parent->SendDraw();
 	parent->ParentMessageLoop();
 	return 0;

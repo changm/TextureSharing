@@ -6,22 +6,12 @@ static const char* PIPE_NAME =  "\\\\.\\pipe\\texturepipe";
 
 Pipe::Pipe()
 {
-	mWaitEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
-	if (!mWaitEvent) {
-		printf("Could not create wait event %d\n", GetLastError());
-	}
-	assert(mWaitEvent);
-
 	memset(&mOverlap, 0, sizeof(OVERLAPPED));
-	mOverlap.hEvent = mWaitEvent;
 }
 
 Pipe::~Pipe()
 {
 	BOOL closed = CloseHandle(mPipe);
-	assert(closed);
-
-	closed = CloseHandle(mWaitEvent);
 	assert(closed);
 }
 
@@ -38,13 +28,12 @@ BOOL Pipe::ReadMsg(MessageData* aOutMessage)
 		return TRUE;
 	}
 
-	WaitForSingleObjectEx(mWaitEvent, INFINITE, true);
-
 	DWORD transferResults;
 	BOOL overlappedResults = GetOverlappedResult(mPipe, &mOverlap, &transferResults, TRUE);
 	if (!overlappedResults) {
 		printf("Did not get overlap results: %d\n", GetLastError());
 	}
+
 	return TRUE;
 }
 
@@ -56,13 +45,12 @@ BOOL Pipe::SendMsg(MessageData* aSendMessage)
 		return TRUE;
 	}
 
-	WaitForSingleObjectEx(mWaitEvent, INFINITE, true);
-
 	DWORD transferResults;
 	BOOL overlappedResults = GetOverlappedResult(mPipe, &mOverlap, &transferResults, TRUE);
 	if (!overlappedResults) {
 		printf("Did not get overlap results: %d\n", GetLastError());
 	}
+
 	return TRUE;
 }
 
@@ -109,17 +97,8 @@ void ServerPipe::WaitForChild()
 
 void ServerPipe::ClosePipe()
 {
-	//CancelIoEx(mPipe, NULL);
+	CancelIoEx(mPipe, NULL);
 	printf("CLOSING PIPE %d\n", GetCurrentProcessId());
-	/*
-	MessageData sendClose = {
-		MESSAGES::
-		0
-	};
-
-	
-	SendMsg(&sendClose);
-	*/
 }
 
 void ChildPipe::ConnectToServerPipe()

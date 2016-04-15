@@ -22,6 +22,7 @@ public:
 	void CloseChild();
 
 	bool mInitChild;
+	HWND mOutputWindow;
 
 private:
 	void CreateContentProcess();
@@ -31,7 +32,6 @@ private:
 	HACCEL LoadNativeWindow();
 	ATOM RegisterWindow(HINSTANCE hInstance);
 	BOOL InitInstance(HINSTANCE, int);
-	HWND mOutputWindow;
 	int mCmdShow;
 
 	PROCESS_INFORMATION mChildProcess;

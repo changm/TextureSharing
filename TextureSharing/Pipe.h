@@ -39,7 +39,6 @@ public:
 
 protected:
 	HANDLE mPipe;
-	HANDLE mWaitEvent;
 	OVERLAPPED mOverlap;
 };
 

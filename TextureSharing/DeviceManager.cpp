@@ -25,10 +25,10 @@ DeviceManager::DeviceManager()
 DeviceManager::~DeviceManager()
 {
 	mFactory->Release();
-	mDevice->Release();
 	mContext->Release();
 	mAdapter->Release();
 	mD2DFactory->Release();
+	mDevice->Release();
 }
 
 void DeviceManager::ReportLiveObjects()
