@@ -8,7 +8,8 @@
 #include <assert.h>
 
 SyncTexture::SyncTexture(LONG aWidth, LONG aHeight)
-	: Texture(aWidth, aHeight)
+	// Always use keyed mutex
+	: Texture(aWidth, aHeight, true)
 {
 
 }
@@ -18,6 +19,7 @@ SyncTexture* SyncTexture::AllocateSyncTexture(ID3D11Device* aDevice, ID3D11Devic
 {
 	assert(aWidth);
 	assert(aHeight);
+	bool useMutex = true;
 	SyncTexture* texture = new SyncTexture(aWidth, aHeight);
 
 	// This is only because our d2d backend does this see:

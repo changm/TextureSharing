@@ -5,7 +5,7 @@
 class Texture
 {
 public:
-	Texture(LONG aWidth, LONG aHeight);
+	Texture(LONG aWidth, LONG aHeight, bool aUseMutex);
 	~Texture();
 
 	static Texture* AllocateTexture(ID3D11Device* aDevice, ID3D11DeviceContext* aContext, LONG aWidth, LONG aHeight, bool aUseMutex);
@@ -38,4 +38,5 @@ protected:
 
 	LONG mWidth;
 	LONG mHeight;
+	bool mUseMutex;
 };

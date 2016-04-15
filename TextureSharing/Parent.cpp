@@ -16,7 +16,7 @@
 
 #include "DeviceManager.h"
 
-#define USE_SYNC_TEXTURE FALSE
+#define USE_SYNC_TEXTURE TRUE
 
 #define MAX_LOADSTRING 100
 
@@ -260,6 +260,7 @@ void Parent::SendDrawOnly()
 
 void Parent::SendDrawOnlySyncLock()
 {
+	printf("Sending sync draw to child\n");
 	MessageData draw = { MESSAGES::CHILD_DRAW_WITH_SYNC_HANDLE, 0 };
 	mPipe->SendMsg(&draw);
 }

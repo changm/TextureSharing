@@ -17,6 +17,7 @@ public:
 	void SendSharedHandle(Texture* aTexture);
 	void SendDrawFinished();
 	void SendSyncTexture();
+	void SendMsg(MESSAGES aMessage);
 
 private:
 	void InitColors(FLOAT aColors[][4]);

@@ -62,7 +62,7 @@ void Child::MessageLoop()
 		}
 		case MESSAGES::INIT_CHILD_DRAW_SYNC_HANDLE:
 		{
-			//printf("[Child] init draw\n");
+			printf("[Child] init sync draw\n");
 			assert(mWidth);
 			assert(mHeight);
 			mDraw = new Drawing(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext());
@@ -89,7 +89,7 @@ void Child::MessageLoop()
 		case MESSAGES::CHILD_DRAW_WITH_SYNC_HANDLE:
 		{
 			assert(mDraw);
-			//printf("[Child] DRAW %d\n", GetCurrentProcessId());
+			printf("[Child] DRAW with sync %d\n", GetCurrentProcessId());
 			DrawWithSyncHandle();
 			break;
 		}
@@ -169,6 +169,13 @@ Child::SendSharedHandle(Texture* aTexture)
 }
 
 void
+Child::SendMsg(MESSAGES aMessage)
+{
+	MessageData msg = { aMessage, 0 };
+	mPipe->SendMsg(&msg);
+}
+
+void
 Child::SendDrawFinished()
 {
 	MessageData finishMessage = {
@@ -189,6 +196,8 @@ Child::DrawWithSyncHandle()
 
 	mSyncTexture->Lock();
 	mSyncTexture->Unlock();
+
+	SendMsg(MESSAGES::CHILD_FINISH_DRAW_SYNC_HANDLE);
 }
 
 void

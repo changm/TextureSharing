@@ -5,9 +5,10 @@
 #include <d3d11.h>
 #include <assert.h>
 
-Texture::Texture(LONG aWidth, LONG aHeight)
+Texture::Texture(LONG aWidth, LONG aHeight, bool aUseMutex)
 	: mWidth(aWidth)
 	, mHeight(aHeight)
+	, mUseMutex(aUseMutex)
 {
 }
 
@@ -23,18 +24,22 @@ Texture::~Texture()
 void
 Texture::Lock()
 {
-	mTexture->QueryInterface(__uuidof(IDXGIKeyedMutex), (void**)&mMutex);
-	HRESULT hr = mMutex->AcquireSync(0, INFINITE);
-	assert(SUCCESS(hr));
+	if (mUseMutex) {
+		mTexture->QueryInterface(__uuidof(IDXGIKeyedMutex), (void**)&mMutex);
+		HRESULT hr = mMutex->AcquireSync(0, INFINITE);
+		assert(SUCCESS(hr));
+	}
 }
 
 void
 Texture::Unlock()
 {
-	HRESULT hr = mMutex->ReleaseSync(0);
-	assert(SUCCESS(hr));
-	mMutex->Release();
-	mMutex = nullptr;
+	if (mUseMutex) {
+		HRESULT hr = mMutex->ReleaseSync(0);
+		assert(SUCCESS(hr));
+		mMutex->Release();
+		mMutex = nullptr;
+	}
 }
 
 /* static */ Texture*
@@ -42,7 +47,7 @@ Texture::AllocateTexture(ID3D11Device* aDevice, ID3D11DeviceContext* aContext, L
 {
 	assert(aWidth);
 	assert(aHeight);
-	Texture* texture = new Texture(aWidth, aHeight);
+	Texture* texture = new Texture(aWidth, aHeight, aUseMutex);
 
 	// This is only because our d2d backend does this see:
 	// https://dxr.mozilla.org/mozilla-central/source/gfx/layers/d3d11/TextureD3D11.cpp#357
