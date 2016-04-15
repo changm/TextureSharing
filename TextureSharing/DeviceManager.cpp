@@ -35,7 +35,6 @@ void DeviceManager::ReportLiveObjects()
 {
 	ID3D11Debug* debug;
 	mDevice->QueryInterface(__uuidof(ID3D11Debug), (void**)&debug);
-	//debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_DETAIL);
 	debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
 	debug->Release();
 }

@@ -71,7 +71,7 @@ Pipe::ReadMsgSync(MessageData* aOutData)
 {
 	const int bufferSize = sizeof(MessageData);
 	BOOL ok = ReadFile(mPipe, aOutData, bufferSize, NULL, NULL);
-	//assert(ok || (GetLastError() == ERROR_BROKEN_PIPE));	// Means was already closed
+	assert(ok || (GetLastError() == ERROR_BROKEN_PIPE));	// Means was already closed
 	return TRUE;
 }
 
@@ -80,7 +80,7 @@ Pipe::SendMsgSync(MessageData* aSendData)
 {
 	const int bufferSize = sizeof(MessageData);
 	BOOL ok = WriteFile(mPipe, aSendData, bufferSize, NULL, NULL);
-	//assert(ok);
+	assert(ok);
 	return TRUE;
 }
 

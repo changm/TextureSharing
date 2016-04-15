@@ -21,9 +21,14 @@ Drawing::Drawing(ID3D11Device* aDevice,
 	: mDevice(aDevice)
 	, mContext(aContext)
 {
+	mDevice->AddRef();
+	mContext->AddRef();
+
 	CompileShaders();
 	SetInputLayout();
 	CreateConstantBuffers();
+	InitVertexBuffers();
+	mIndexCount = SetIndexBuffers();
 }
 
 Drawing::~Drawing()
@@ -211,31 +216,16 @@ void Drawing::InitVertexBuffers()
 
 void Drawing::UploadVertices(FLOAT* aColor)
 {
-	D3D11_BUFFER_DESC bufferDesc;
-	memset(&bufferDesc, 0, sizeof(bufferDesc));
-
 	VertexPosColor vertices[4];
 	for (int i = 0; i < 4; i++) {
 		vertices[i] = { refVertices[i].Position, XMFLOAT3(aColor[0], aColor[1], aColor[2]) };
 	}
 
-	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	bufferDesc.ByteWidth = sizeof(VertexPosColor) * _countof(vertices);	// Because we have 3 vertices
-	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bufferDesc.CPUAccessFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA resourceData;
-	memset(&resourceData, 0, sizeof(D3D11_SUBRESOURCE_DATA));
-	resourceData.pSysMem = vertices;
-
-	// This uploads the data to the gpu
-	HRESULT result = mDevice->CreateBuffer(&bufferDesc, &resourceData, &mVertexBuffer);
-	assert(SUCCESS(result));
-
-	// Finally draw the things, set the vertex buffers to the one that we uploaded to the gpu
-	UINT stride = sizeof(VertexPosColor);
-	UINT offset = 0;
-	mContext->IASetVertexBuffers(0, 1, &mVertexBuffer, &stride, &offset);
+	D3D11_MAPPED_SUBRESOURCE resource;
+	HRESULT hr = mContext->Map(mVertexBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &resource);
+	assert(hr == S_OK);
+	memcpy(resource.pData, vertices, sizeof(VertexPosColor) * 4);	// 4 vertices
+	mContext->Unmap(mVertexBuffer, NULL);
 }
 
 void
@@ -270,7 +260,6 @@ void Drawing::Draw(Texture* aTexture, FLOAT* aColor) {
 	UpdateConstantBuffers();
 	UploadVertices(aColor);
 
-	int indexCount = SetIndexBuffers();
-	mContext->DrawIndexed(indexCount, 0, 0);
+	mContext->DrawIndexed(mIndexCount, 0, 0);
 	aTexture->Unlock();
 }

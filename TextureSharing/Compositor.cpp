@@ -19,6 +19,10 @@ Compositor::Compositor(HWND aOutputWindow)
 	mDeviceManager = new DeviceManager();
 	mContext = mDeviceManager->GetDeviceContext();
 	mDevice = mDeviceManager->GetDevice();
+
+	mContext->AddRef();
+	mDevice->AddRef();
+
 	mDeviceManager->CreateSwapChain(&mSwapChain, mWidth, mHeight, mOutputWindow);
 
 	mMutex = CreateMutex(NULL, false, L"CompositorMutex");
