@@ -58,12 +58,6 @@ Compositor::~Compositor()
 }
 
 void
-Compositor::ReadTextures()
-{
-
-}
-
-void
 Compositor::CompileTextureShaders()
 {
 	HRESULT result;
@@ -186,10 +180,28 @@ Compositor::SetIndexBuffers()
 }
 
 void
+Compositor::InitViewport()
+{
+	assert(mWidth);
+	assert(mHeight);
+
+	// D3d goes from -1, 1 and that maps to device space via the viewport.
+	D3D11_VIEWPORT viewport;
+	memset(&viewport, 0, sizeof(D3D11_VIEWPORT));
+	viewport.Width = mWidth;
+	viewport.Height = mHeight;
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+
+	mContext->RSSetViewports(1, &viewport);
+}
+
+void
 Compositor::PrepareDrawing()
 {
 	mContext->OMSetRenderTargets(1, &mBackBufferView, NULL);
 
+	InitViewport();
 	CompileTextureShaders();
 	SetInputLayout();
 	SetIndexBuffers();
@@ -211,8 +223,6 @@ Compositor::DrawViaTextureShaders(ID3D11Texture2D* aTexture, VertexData* aLocati
 void
 Compositor::DrawViaTextureShaders(Texture* aTexture, VertexData* aLocation)
 {
-	InitVertexBuffers(aLocation);
-
 	aTexture->Lock();
 	DrawViaTextureShaders(aTexture->GetTexture(), aLocation);
 	aTexture->Unlock();
@@ -247,6 +257,12 @@ Compositor::CopyToBackBuffer(Texture* aTexture)
 }
 
 void
+Compositor::CopyToBackBuffer(ID3D11Texture2D* aTexture)
+{
+	mContext->CopyResource(mBackBuffer, aTexture);
+}
+
+void
 Compositor::InitColors(FLOAT aColors[][4], int aCount)
 {
 	assert(aCount == 6);
@@ -266,6 +282,7 @@ Compositor::CompositeSolo()
 		return;
 	}
 	Composite(mSharedHandle);
+
 	const int size = 6;
 	FLOAT colors[size][4];
 	Texture* textures[size];
@@ -278,10 +295,10 @@ Compositor::CompositeSolo()
 		drawing.Draw(textures[i], colors[i]);
 	}
 
-	//CopyToBackBuffer(textures[5]);
 	PrepareDrawing();
 
-	DrawViaTextureShaders(textures[0], TopLeft);
+	DrawViaTextureShaders(textures[0], FullScreen);
+	mSwapChain->Present(0, 0);
 	DrawViaTextureShaders(textures[1], TopRight);
 	DrawViaTextureShaders(textures[2], BottomLeft);
 	DrawViaTextureShaders(textures[3], BottomRight);
@@ -291,7 +308,6 @@ Compositor::CompositeSolo()
 		delete textures[i];
 	}
 
-	/*
 	Texture* texture = Texture::AllocateTexture(mDevice, mContext, mWidth, mHeight);
 	
 	drawing.Draw(texture);
@@ -329,24 +345,4 @@ Compositor::Composite(std::vector<HANDLE>& aHandles)
 	}
 
 	mSwapChain->Present(0, 0);
-
-	/*
-	mSharedHandle = aSharedTextureHandle;
-	if (!mSharedHandle) { return; }
-
-	printf("Copying to shared texture\n");
-	ID3D11Texture2D* sharedTexture;
-	HRESULT hr = mDevice->OpenSharedResource(aSharedTextureHandle, __uuidof(ID3D11Texture2D), (void**)&sharedTexture);
-	assert(SUCCESS(hr));
-
-	IDXGIKeyedMutex* mutex;
-	sharedTexture->QueryInterface(__uuidof(IDXGIKeyedMutex), (void**)&mutex);
-	hr = mutex->AcquireSync(0, 10000);
-	assert(SUCCESS(hr));
-
-	CopyToBackBuffer(sharedTexture);
-	mutex->ReleaseSync(0);
-
-	mSwapChain->Present(0, 0);
-	*/
 }

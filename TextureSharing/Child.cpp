@@ -94,6 +94,12 @@ Child::InitTextures()
 		mTextures[i] = Texture::AllocateTexture(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), mWidth, mHeight);
 		SendSharedHandle(mTextures[i]);
 	}
+
+	for (int i = 0; i < mTextureCount; i++) {
+		mDraw->Draw(mTextures[i], mColors[i]);
+	}
+
+
 }
 
 void
@@ -124,9 +130,11 @@ void
 Child::Draw()
 {
 	printf("[Child] Child Drawing\n");
+	/*
 	for (int i = 0; i < mTextureCount; i++) {
 		mDraw->Draw(mTextures[i], mColors[i]);
 	}
+	*/
 
 	SendDrawFinished();
 }

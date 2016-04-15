@@ -23,9 +23,10 @@ public:
 	void ResizeBuffers();
 
 private:
+	void InitViewport();
 	void CalculateDimensions();
-	void ReadTextures();
 	void CopyToBackBuffer(Texture* aTexture);
+	void CopyToBackBuffer(ID3D11Texture2D* aTexture);
 	void InitBackBuffer();
 	void InitColors(FLOAT aColors[][4], int aCount);
 

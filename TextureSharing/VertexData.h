@@ -44,6 +44,14 @@ static VertexData BottomRight[] =
 	{ XMFLOAT3(1, -1, 0), XMFLOAT2(1,1) },  // bottom right
 };
 
+static VertexData FullScreen[] =
+{
+	{ XMFLOAT3(-1, -1, 0), XMFLOAT2(0,1) }, // bottom left
+	{ XMFLOAT3(-1, 1, 0), XMFLOAT2(0,0) }, // top left
+	{ XMFLOAT3(1, 1, 0), XMFLOAT2(1,0) },	// top right
+	{ XMFLOAT3(1, -1, 0), XMFLOAT2(1,1) },  // bottom right
+};
+
 VertexData* POSITIONS[] =
 {
 	TopLeft, TopRight, BottomLeft, BottomRight
