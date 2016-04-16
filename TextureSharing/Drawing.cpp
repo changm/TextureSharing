@@ -14,6 +14,9 @@
 #include <DirectXMath.h>
 #include "Texture.h"
 
+#include "VertexShader.h"
+#include "PixelShader.h"
+
 using namespace DirectX;
 
 Drawing::Drawing(ID3D11Device* aDevice,
@@ -24,7 +27,7 @@ Drawing::Drawing(ID3D11Device* aDevice,
 	mDevice->AddRef();
 	mContext->AddRef();
 
-	CompileShaders();
+	SetShaders();
 	SetInputLayout();
 	CreateConstantBuffers();
 	InitVertexBuffers();
@@ -36,8 +39,6 @@ Drawing::~Drawing()
 	mVertexShader->Release();
 	mPixelShader->Release();
 
-	mVertexShaderBytecode->Release();
-	mPixelShaderBytecode->Release();
 	mDevice->Release();
 	mContext->Release();
 
@@ -49,27 +50,13 @@ Drawing::~Drawing()
 	}
 }
 
-void Drawing::CompileShaders()
+void Drawing::SetShaders()
 {
-	HRESULT result;
-
-	// Compile our shaders
-	result = D3DCompileFromFile(L"VertexShader.hlsl", NULL, NULL,
-								"main", "vs_5_0", 0, 0,
-								&mVertexShaderBytecode, NULL);
-	assert(SUCCESS(result));
-
-	result = D3DCompileFromFile(L"PixelShader.hlsl", NULL, NULL,
-								"main", "ps_5_0", 0, 0,
-								&mPixelShaderBytecode, NULL);
-	assert(SUCCESS(result));
-	assert(mDevice);
-
 	// Create the pixel shaders from the bytecode
-	result = mDevice->CreatePixelShader(mPixelShaderBytecode->GetBufferPointer(), mPixelShaderBytecode->GetBufferSize(), NULL, &mPixelShader);
+	HRESULT result = mDevice->CreatePixelShader(g_PixelShader_main, sizeof(g_PixelShader_main), NULL, &mPixelShader);
 	assert(SUCCESS(result));
 
-	mDevice->CreateVertexShader(mVertexShaderBytecode->GetBufferPointer(), mVertexShaderBytecode->GetBufferSize(), NULL, &mVertexShader);
+	mDevice->CreateVertexShader(g_Vertex_main, sizeof(g_Vertex_main), NULL, &mVertexShader);
 	assert(SUCCESS(result));
 
 	// Finally set them as our default pixel shaders
@@ -241,9 +228,9 @@ Drawing::SetInputLayout()
 
 	ID3D11InputLayout* inputLayout;
 	HRESULT result = mDevice->CreateInputLayout(inputDesc, 2,
-														mVertexShaderBytecode->GetBufferPointer(),
-														mVertexShaderBytecode->GetBufferSize(),
-														&inputLayout);
+																							g_Vertex_main,
+																							sizeof(g_Vertex_main),
+																							&inputLayout);
 	assert(SUCCESS(result));
 	mContext->IASetInputLayout(inputLayout);
 	// Tell the GPU we just have a list of triangles

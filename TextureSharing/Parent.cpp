@@ -16,7 +16,7 @@
 
 #include "DeviceManager.h"
 
-#define USE_SYNC_TEXTURE FALSE
+#define USE_SYNC_TEXTURE TRUE
 
 #define MAX_LOADSTRING 100
 

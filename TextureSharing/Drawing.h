@@ -31,12 +31,9 @@ private:
 	int SetIndexBuffers();
 
 	// Let's use some shaders now
-	void CompileShaders();
+	void SetShaders();
 	ID3D11VertexShader* mVertexShader;
 	ID3D11PixelShader* mPixelShader;
-
-	ID3D10Blob* mVertexShaderBytecode;
-	ID3D10Blob* mPixelShaderBytecode;
 
 	// Setup D3D
 	ID3D11Device* mDevice;
