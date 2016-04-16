@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include "VertexData.h"
 #include <vector>
+#include "TextureMappingPS.h"
+#include "TextureMappingVS.h"
 
 Compositor* Compositor::mCompositor = nullptr;
 Compositor::Compositor(HWND aOutputWindow)
@@ -40,8 +42,6 @@ Compositor::Clean()
 	mVertexBuffer->Release();
 	mVertexShader->Release();
 	mIndexBuffer->Release();
-	mVertexShaderBytecode->Release();
-	mPixelShaderBytecode->Release();
 	mPixelShader->Release();
 	mSwapChain->Release();
 	mBackBuffer->Release();
@@ -77,24 +77,10 @@ void
 Compositor::CompileTextureShaders()
 {
 	HRESULT result;
-
-	// Compile our shaders
-	result = D3DCompileFromFile(L"TextureMappingVS.hlsl", NULL, NULL,
-								"main", "vs_5_0", 0, 0,
-								&mVertexShaderBytecode, NULL);
+	result = mDevice->CreatePixelShader(g_TexturePixelShader, sizeof(g_TexturePixelShader), NULL, &mPixelShader);
 	assert(SUCCESS(result));
 
-	result = D3DCompileFromFile(L"TextureMappingPS.hlsl", NULL, NULL,
-								"main", "ps_5_0", 0, 0,
-								&mPixelShaderBytecode, NULL);
-	assert(SUCCESS(result));
-	assert(mDevice);
-
-	// Create the pixel shaders from the bytecode
-	result = mDevice->CreatePixelShader(mPixelShaderBytecode->GetBufferPointer(), mPixelShaderBytecode->GetBufferSize(), NULL, &mPixelShader);
-	assert(SUCCESS(result));
-
-	mDevice->CreateVertexShader(mVertexShaderBytecode->GetBufferPointer(), mVertexShaderBytecode->GetBufferSize(), NULL, &mVertexShader);
+	mDevice->CreateVertexShader(g_TextureVertexShader, sizeof(g_TextureVertexShader), NULL, &mVertexShader);
 	assert(SUCCESS(result));
 
 	// Finally set them as our default pixel shaders
@@ -117,8 +103,7 @@ Compositor::SetInputLayout()
 	assert(inputCount == 2);
 
 	HRESULT result = mDevice->CreateInputLayout(inputDesc, inputCount,
-							mVertexShaderBytecode->GetBufferPointer(),
-							mVertexShaderBytecode->GetBufferSize(),
+							g_TextureVertexShader, sizeof(g_TextureVertexShader),
 							&inputLayout);
 	assert(SUCCESS(result));
 	mContext->IASetInputLayout(inputLayout);

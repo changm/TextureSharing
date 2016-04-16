@@ -58,8 +58,6 @@ private:
 	ID3D11Buffer* mIndexBuffer;
 	ID3D11ShaderResourceView* mTextureView;
 
-	ID3D10Blob* mVertexShaderBytecode;
-	ID3D10Blob* mPixelShaderBytecode;
 	ID3D11VertexShader* mVertexShader;
 	ID3D11PixelShader* mPixelShader;
 

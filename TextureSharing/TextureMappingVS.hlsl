@@ -26,7 +26,7 @@ struct VertexShaderOutput
 	float4 Position: SV_POSITION;
 };
 
-VertexShaderOutput main(VertexShaderInput input)
+VertexShaderOutput TextureVertexShader(VertexShaderInput input)
 {
 	VertexShaderOutput output;
 
