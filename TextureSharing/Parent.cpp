@@ -75,12 +75,7 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hWnd, &ps);
-		Compositor::GetCompositor(hWnd)->ResizeBuffers();
-		if (!sParent->mInitChild) {
-			sParent->InitChildDraw();
-			sParent->mInitChild = true;
-		}
-		sParent->SendDraw();
+		//Compositor::GetCompositor(hWnd)->ResizeBuffers();
 		EndPaint(hWnd, &ps);
 	}
 	break;
@@ -304,11 +299,9 @@ Parent::IsCompositorThread()
 static DWORD PaintLoop(void* aParentInstance)
 {
 	Parent* parent = (Parent*)aParentInstance;
-	/*
 	Compositor::GetCompositor(parent->mOutputWindow)->ResizeBuffers();
 	parent->InitChildDraw();
 	parent->SendDraw();
-	*/
 	parent->ParentMessageLoop();
 	return 0;
 }
