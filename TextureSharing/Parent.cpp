@@ -265,7 +265,6 @@ void Parent::ParentMessageLoop()
 		}
 		case MESSAGES::CHILD_FINISH_DRAW:
 		{
-			printf("Parent finish draw\n");
 			assert(mSyncHandle);
 			Compositor::GetCompositor(mOutputWindow)->Composite(mSharedHandles, mSyncHandle);
 			SendMsg(MESSAGES::CHILD_DRAW);

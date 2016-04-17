@@ -37,6 +37,13 @@ Compositor::~Compositor()
 void
 Compositor::Clean()
 {
+	for (auto it = mTextures.begin(); it != mTextures.end(); it++) {
+		ID3D11Texture2D* sharedTexture = it->second;
+		sharedTexture->Release();
+	}
+	mTextures.clear();
+
+	mSyncTexture->Release();
 	mDevice->Release();
 	mContext->Release();
 	mVertexBuffer->Release();
@@ -312,26 +319,39 @@ Compositor::LockSyncHandle(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle)
 	IDXGIKeyedMutex* mutex;
 	// Only lock our sync texture
 	mSyncTexture->QueryInterface(__uuidof(IDXGIKeyedMutex), (void**)&mutex);
-	HRESULT hr = mutex->AcquireSync(0, 10000);
+	HRESULT hr = mutex->AcquireSync(0, INFINITE);
 	assert(SUCCESS(hr));
 
 	// Copy 1 pixel from every shared handle onto our sync texture
 	for (std::vector<HANDLE>::iterator it = aHandles.begin(); it != aHandles.end(); it++) {
 		HANDLE handle = *it;
-		ID3D11Texture2D* sharedTexture;
-		HRESULT hr = mDevice->OpenSharedResource(handle, __uuidof(ID3D11Texture2D), (void**)&sharedTexture);
-		assert(SUCCESS(hr));
+		ID3D11Texture2D* sharedTexture = GetTexture(handle);
 
 		D3D11_BOX box;
 		box.front = box.top = box.left = 0;
 		box.back = box.right = box.bottom = 1;
 		mContext->CopySubresourceRegion(mSyncTexture, 0, 0, 0, 0, sharedTexture, 0, &box);
-
-		sharedTexture->Release();
 	}
 
 	mutex->ReleaseSync(0);
 	mutex->Release();
+}
+
+ID3D11Texture2D*
+Compositor::GetTexture(HANDLE aHandle)
+{
+	auto texture = mTextures.find(aHandle);
+	if (texture == mTextures.end()) {
+		ID3D11Texture2D* sharedTexture;
+		HRESULT hr = mDevice->OpenSharedResource(aHandle, __uuidof(ID3D11Texture2D), (void**)&sharedTexture);
+		assert(SUCCESS(hr));
+
+		std::pair<HANDLE, ID3D11Texture2D*> pair(aHandle, sharedTexture);
+		mTextures.insert(pair);
+		return sharedTexture;
+	}
+
+	return texture->second;
 }
 
 void
@@ -344,12 +364,8 @@ Compositor::CompositeWithSync(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle)
 
 	for (std::vector<HANDLE>::iterator it = aHandles.begin(); it != aHandles.end(); it++) {
 		HANDLE handle = *it;
-		ID3D11Texture2D* sharedTexture;
-		HRESULT hr = mDevice->OpenSharedResource(handle, __uuidof(ID3D11Texture2D), (void**)&sharedTexture);
-		assert(SUCCESS(hr));
-
+		ID3D11Texture2D* sharedTexture = GetTexture(handle);
 		DrawViaTextureShaders(sharedTexture, POSITIONS[position++]);
-		sharedTexture->Release();
 	}
 
 	mContext->Flush();
@@ -364,23 +380,19 @@ Compositor::Composite(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle)
 
 	for (std::vector<HANDLE>::iterator it = aHandles.begin(); it != aHandles.end(); it++) {
 		HANDLE handle = *it;
-		ID3D11Texture2D* sharedTexture;
-		HRESULT hr = mDevice->OpenSharedResource(handle, __uuidof(ID3D11Texture2D), (void**)&sharedTexture);
-		assert(SUCCESS(hr));
+		ID3D11Texture2D* sharedTexture = GetTexture(handle);
 
 		IDXGIKeyedMutex* mutex;
 		sharedTexture->QueryInterface(__uuidof(IDXGIKeyedMutex), (void**)&mutex);
-		hr = mutex->AcquireSync(0, 10000);
+		HRESULT hr = mutex->AcquireSync(0, 10000);
 		assert(SUCCESS(hr));
 
 		DrawViaTextureShaders(sharedTexture, POSITIONS[position++]);
 
-		sharedTexture->Release();
 		mutex->ReleaseSync(0);
 		mutex->Release();
 	}
 
 	mContext->Flush();
-
 	mSwapChain->Present(0, 0);
 }

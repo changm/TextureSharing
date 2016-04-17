@@ -3,6 +3,7 @@
 #include <d2d1.h>
 #include <DirectXMath.h>
 #include <vector>
+#include <map>
 
 using namespace DirectX;
 
@@ -33,6 +34,7 @@ private:
 	void InitBackBuffer();
 	void InitColors(FLOAT aColors[][4], int aCount);
 	void LockSyncHandle(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle);
+	ID3D11Texture2D* GetTexture(HANDLE aHandle);
 
 	HWND mOutputWindow;
 	static Compositor* mCompositor;
@@ -70,5 +72,6 @@ private:
 	ID3D11Texture2D* mBackBuffer;
 
 	ID3D11Texture2D* mSyncTexture;
+	std::map<HANDLE, ID3D11Texture2D*> mTextures;
 	HANDLE mMutex;
 };
