@@ -23,6 +23,7 @@ public:
 	void ResizeBuffers();
 	void ReportLiveObjects();
 	void Clean();
+	void InitSyncTexture(HANDLE aSyncHandle);
 
 private:
 	void InitViewport();
@@ -31,7 +32,7 @@ private:
 	void CopyToBackBuffer(ID3D11Texture2D* aTexture);
 	void InitBackBuffer();
 	void InitColors(FLOAT aColors[][4], int aCount);
-	void LockSyncHandle(HANDLE aSyncHandle);
+	void LockSyncHandle(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle);
 
 	HWND mOutputWindow;
 	static Compositor* mCompositor;
@@ -68,5 +69,6 @@ private:
 	ID3D11RenderTargetView* mBackBufferView;
 	ID3D11Texture2D* mBackBuffer;
 
+	ID3D11Texture2D* mSyncTexture;
 	HANDLE mMutex;
 };

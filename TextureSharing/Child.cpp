@@ -145,7 +145,9 @@ Child::DrawWithSyncHandle()
 		mDraw->DrawNoLock(mTextures[i], mColors[i]);
 	}
 
+	// Draw into our sync texture although it's not really visible
 	mSyncTexture->Lock();
+	mDraw->DrawNoLock(mSyncTexture, white);
 	mSyncTexture->Unlock();
 
 	SendMsg(MESSAGES::CHILD_FINISH_DRAW_SYNC_HANDLE);

@@ -281,6 +281,7 @@ void Parent::ParentMessageLoop()
 		case MESSAGES::SYNC_TEXTURE_HANDLE:
 		{
 			mSyncHandle = (HANDLE) mChildMessages.data;
+			Compositor::GetCompositor(mOutputWindow)->InitSyncTexture(mSyncHandle);
 			assert(mSyncHandle);
 			break;
 		}

@@ -282,27 +282,6 @@ Compositor::InitColors(FLOAT aColors[][4], int aCount)
 	InitColor(aColors[5], 0.5, 0.5, 0.5, 1);
 }
 
-/*
- * Don't need to actually do anything with the texture, we hope this forces a flush.
- */
-void
-Compositor::LockSyncHandle(HANDLE aSyncHandle)
-{
-	assert(aSyncHandle);
-	ID3D11Texture2D* sharedTexture;
-	HRESULT hr = mDevice->OpenSharedResource(aSyncHandle, __uuidof(ID3D11Texture2D), (void**)&sharedTexture);
-	assert(SUCCESS(hr));
-
-	IDXGIKeyedMutex* mutex;
-	sharedTexture->QueryInterface(__uuidof(IDXGIKeyedMutex), (void**)&mutex);
-	hr = mutex->AcquireSync(0, 10000);
-	assert(SUCCESS(hr));
-
-	sharedTexture->Release();
-	mutex->ReleaseSync(0);
-	mutex->Release();
-}
-
 void
 Compositor::ReportLiveObjects()
 {
@@ -310,9 +289,55 @@ Compositor::ReportLiveObjects()
 }
 
 void
+Compositor::InitSyncTexture(HANDLE aSyncHandle)
+{
+	assert(aSyncHandle);
+	HRESULT hr = mDevice->OpenSharedResource(aSyncHandle, __uuidof(ID3D11Texture2D), (void**)&mSyncTexture);
+	assert(SUCCESS(hr));
+
+	IDXGIKeyedMutex* mutex;
+	mSyncTexture->QueryInterface(__uuidof(IDXGIKeyedMutex), (void**)&mutex);
+	hr = mutex->AcquireSync(0, 10000);
+	assert(SUCCESS(hr));
+
+	mutex->ReleaseSync(0);
+	mutex->Release();
+}
+
+void
+Compositor::LockSyncHandle(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle)
+{
+	assert(aSyncHandle);
+	assert(mSyncTexture);
+	IDXGIKeyedMutex* mutex;
+	// Only lock our sync texture
+	mSyncTexture->QueryInterface(__uuidof(IDXGIKeyedMutex), (void**)&mutex);
+	HRESULT hr = mutex->AcquireSync(0, 10000);
+	assert(SUCCESS(hr));
+
+	// Copy 1 pixel from every shared handle onto our sync texture
+	for (std::vector<HANDLE>::iterator it = aHandles.begin(); it != aHandles.end(); it++) {
+		HANDLE handle = *it;
+		ID3D11Texture2D* sharedTexture;
+		HRESULT hr = mDevice->OpenSharedResource(handle, __uuidof(ID3D11Texture2D), (void**)&sharedTexture);
+		assert(SUCCESS(hr));
+
+		D3D11_BOX box;
+		box.front = box.top = box.left = 0;
+		box.back = box.right = box.bottom = 1;
+		mContext->CopySubresourceRegion(mSyncTexture, 0, 0, 0, 0, sharedTexture, 0, &box);
+
+		sharedTexture->Release();
+	}
+
+	mutex->ReleaseSync(0);
+	mutex->Release();
+}
+
+void
 Compositor::CompositeWithSync(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle)
 {
-	LockSyncHandle(aSyncHandle);
+	LockSyncHandle(aHandles, aSyncHandle);
 
 	int handleCount = aHandles.size();
 	int position = 0;
