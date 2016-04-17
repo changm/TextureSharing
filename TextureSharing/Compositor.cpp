@@ -323,6 +323,7 @@ Compositor::LockSyncHandle(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle)
 	assert(SUCCESS(hr));
 
 	// Copy 1 pixel from every shared handle onto our sync texture
+	/*
 	for (std::vector<HANDLE>::iterator it = aHandles.begin(); it != aHandles.end(); it++) {
 		HANDLE handle = *it;
 		ID3D11Texture2D* sharedTexture = GetTexture(handle);
@@ -332,6 +333,7 @@ Compositor::LockSyncHandle(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle)
 		box.back = box.right = box.bottom = 1;
 		mContext->CopySubresourceRegion(mSyncTexture, 0, 0, 0, 0, sharedTexture, 0, &box);
 	}
+	*/
 
 	mutex->ReleaseSync(0);
 	mutex->Release();

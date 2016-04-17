@@ -145,9 +145,9 @@ Child::DrawWithSyncHandle()
 		mDraw->DrawNoLock(mTextures[i], mColors[i]);
 	}
 
-	// Draw into our sync texture although it's not really visible
+	// Copy one pixel from each texture into the sync texture
 	mSyncTexture->Lock();
-	mDraw->DrawNoLock(mSyncTexture, white);
+	mDraw->CopyPixelIntoTexture(mSyncTexture, mTextures, mTextureCount);
 	mSyncTexture->Unlock();
 
 	SendMsg(MESSAGES::CHILD_FINISH_DRAW_SYNC_HANDLE);
@@ -156,22 +156,10 @@ Child::DrawWithSyncHandle()
 void
 Child::Draw()
 {
-	/*
-	for (int i = 0; i < mTextureCount; i++) {
-		mTextures[i]->Lock();
-	}
-	*/
-
 	for (int i = 0; i < mTextureCount; i++) {
 		mDraw->Draw(mTextures[i], white);
 		mDraw->Draw(mTextures[i], mColors[i]);
 	}
-
-	/*
-	for (int i = 0; i < mTextureCount; i++) {
-		mTextures[i]->Unlock();
-	}
-	*/
 
 	SendMsg(MESSAGES::CHILD_FINISH_DRAW);
 }

@@ -238,6 +238,19 @@ Drawing::SetInputLayout()
 	inputLayout->Release();
 }
 
+void Drawing::CopyPixelIntoTexture(Texture* aSyncTexture, Texture** aTextures, int aCount)
+{
+	// Assumes aSyncTexture is already locked
+	for (int i = 0; i < aCount; i++) {
+		Texture* texture = aTextures[i];
+
+		D3D11_BOX box;
+		box.front = box.top = box.left = 0;
+		box.back = box.right = box.bottom = 1;
+		mContext->CopySubresourceRegion(aSyncTexture->GetTexture(), 0, 0, 0, 0, texture->GetTexture(), 0, &box);
+	}
+}
+
 void Drawing::DrawNoLock(Texture* aTexture, FLOAT* aColor)
 {
 	SetRenderTarget(aTexture);

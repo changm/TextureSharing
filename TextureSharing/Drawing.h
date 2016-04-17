@@ -17,6 +17,7 @@ public:
 	// Draws to this texture
 	void Draw(Texture* aTexture, FLOAT* aColor);
 	void DrawNoLock(Texture* aTexture, FLOAT* aColor);
+	void CopyPixelIntoTexture(Texture* aSyncTexture, Texture* aTextures[], int aCount);
 	~Drawing();
 
 private:
