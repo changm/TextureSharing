@@ -140,6 +140,9 @@ Child::SendMsg(MESSAGES aMessage, DWORD aData)
 void
 Child::DrawWithSyncHandle()
 {
+	mSyncTexture->Lock();
+	mSyncTexture->Unlock();
+
 	for (int i = 0; i < mTextureCount; i++) {
 		mDraw->DrawNoLock(mTextures[i], white);
 		mDraw->DrawNoLock(mTextures[i], mColors[i]);
