@@ -27,6 +27,7 @@ public:
 private:
 	void CreateContentProcess();
 	void CreateMessageLoopThread();
+	void Swap();
 
 	// Windows desktop code
 	HACCEL LoadNativeWindow();
@@ -41,6 +42,9 @@ private:
 	MessageData mChildMessages;
 	HANDLE mMessageLoop;
 
-	std::vector<HANDLE> mSharedHandles;
+	std::vector<HANDLE> mSharedFrontHandles;
+	std::vector<HANDLE> mSharedBackHandles;
+	std::vector<HANDLE>* mCurrentBuffer;
+
 	HANDLE mSyncHandle;	// Our sync handle that is locked last on content, first on parent
 };

@@ -22,7 +22,8 @@ Child::~Child()
 void Child::Clean()
 {
 	for (int i = 0; i < mTextureCount; i++) {
-		delete mTextures[i];
+		delete mFrontBuffers[i];
+		delete mBackBuffers[i];
 	}
 
 	delete mSyncTexture;
@@ -30,6 +31,15 @@ void Child::Clean()
 
 	mDraw->~Drawing();
 	_aligned_free(mDraw);
+}
+
+void Child::Swap()
+{
+	if (mCurrentTextures == mFrontBuffers) {
+		mCurrentTextures = mBackBuffers;
+	} else {
+		mCurrentTextures = mFrontBuffers;
+	}
 }
 
 void Child::MessageLoop()
@@ -107,14 +117,18 @@ Child::InitTextures(bool aUseMutex)
 {
 	// Only draw 4 textures for now
 	for (int i = 0; i < mTextureCount; i++) {
-		mTextures[i] = Texture::AllocateTexture(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), mWidth, mHeight, aUseMutex);
-		SendMsg(MESSAGES::SHARED_HANDLE, (DWORD) mTextures[i]->GetSharedHandle());
+		mFrontBuffers[i] = Texture::AllocateTexture(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), mWidth, mHeight, aUseMutex);
+		SendMsg(MESSAGES::SHARED_FRONT_HANDLE, (DWORD) mFrontBuffers[i]->GetSharedHandle());
+
+		mBackBuffers[i] = Texture::AllocateTexture(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), mWidth, mHeight, aUseMutex);
+		SendMsg(MESSAGES::SHARED_BACK_HANDLE, (DWORD) mBackBuffers[i]->GetSharedHandle());
 	}
 
+	mCurrentTextures = mFrontBuffers;
 	InitSyncTexture();
 
 	for (int i = 0; i < mTextureCount; i++) {
-		mDraw->Draw(mTextures[i], mColors[i]);
+		mDraw->Draw(mCurrentTextures[i], mColors[i]);
 	}
 }
 
@@ -124,6 +138,7 @@ Child::InitSyncTexture()
 	assert(mWidth);
 	assert(mHeight);
 
+	::DebugBreak();
 	mSyncTexture = SyncTexture::AllocateSyncTexture(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), mWidth, mHeight);
 	HANDLE syncTexture = mSyncTexture->GetSharedHandle();
 
@@ -144,24 +159,26 @@ Child::DrawWithSyncHandle()
 	//mSyncTexture->Unlock();
 
 	for (int i = 0; i < mTextureCount; i++) {
-		mDraw->DrawNoLock(mTextures[i], white);
-		mDraw->DrawNoLock(mTextures[i], mColors[i]);
+		Texture* texture = mCurrentTextures[i];
+		mDraw->DrawNoLock(texture, white);
+		mDraw->DrawNoLock(texture, mColors[i]);
 	}
 
 	// Copy one pixel from each texture into the sync texture
 	mSyncTexture->Lock();
-	mDraw->CopyPixelIntoTexture(mSyncTexture, mTextures, mTextureCount);
+	mDraw->CopyPixelIntoTexture(mSyncTexture, mCurrentTextures, mTextureCount);
 	mSyncTexture->Unlock();
 
 	SendMsg(MESSAGES::CHILD_FINISH_DRAW_SYNC_HANDLE);
+	Swap();
 }
 
 void
 Child::Draw()
 {
 	for (int i = 0; i < mTextureCount; i++) {
-		mDraw->Draw(mTextures[i], white);
-		mDraw->Draw(mTextures[i], mColors[i]);
+		mDraw->Draw(mFrontBuffers[i], white);
+		mDraw->Draw(mFrontBuffers[i], mColors[i]);
 	}
 
 	SendMsg(MESSAGES::CHILD_FINISH_DRAW);

@@ -208,7 +208,7 @@ Parent::~Parent()
 
 	CloseHandle(mMessageLoop);
 	// Handles closed on child side
-	mSharedHandles.clear();
+	mSharedFrontHandles.clear();
 
 	CloseHandle(mChildProcess.hThread);
 	CloseHandle(mChildProcess.hProcess);
@@ -251,29 +251,46 @@ void Parent::SendDraw()
 	}
 }
 
+void Parent::Swap()
+{
+	if (mCurrentBuffer == &mSharedFrontHandles) {
+		mCurrentBuffer = &mSharedBackHandles;
+	} else {
+		mCurrentBuffer = &mSharedFrontHandles;
+	}
+}
+
 void Parent::ParentMessageLoop()
 {
 	// Happens on message loop thread
 	assert(Parent::IsCompositorThread());
 	while (mPipe->ReadMsg(&mChildMessages)) {
 		switch (mChildMessages.type) {
-		case MESSAGES::SHARED_HANDLE:
+		case MESSAGES::SHARED_FRONT_HANDLE:
 		{
 			HANDLE sharedTextureHandle = (HANDLE) mChildMessages.data;
-			mSharedHandles.push_back(sharedTextureHandle);
+			mSharedFrontHandles.push_back(sharedTextureHandle);
+			break;
+		}
+		case MESSAGES::SHARED_BACK_HANDLE:
+		{
+			HANDLE sharedTextureHandle = (HANDLE) mChildMessages.data;
+			mSharedBackHandles.push_back(sharedTextureHandle);
+			mCurrentBuffer = &mSharedFrontHandles;
 			break;
 		}
 		case MESSAGES::CHILD_FINISH_DRAW:
 		{
 			assert(mSyncHandle);
-			Compositor::GetCompositor(mOutputWindow)->Composite(mSharedHandles, mSyncHandle);
+			Compositor::GetCompositor(mOutputWindow)->Composite(mSharedFrontHandles, mSyncHandle);
 			SendMsg(MESSAGES::CHILD_DRAW);
 			break;
 		}
 		case MESSAGES::CHILD_FINISH_DRAW_SYNC_HANDLE:
 		{
 			assert(mSyncHandle);
-			Compositor::GetCompositor(mOutputWindow)->CompositeWithSync(mSharedHandles, mSyncHandle);
+			Compositor::GetCompositor(mOutputWindow)->CompositeWithSync(*mCurrentBuffer, mSyncHandle);
+			Swap();
 			SendMsg(MESSAGES::CHILD_DRAW_WITH_SYNC_HANDLE);
 			break;
 		}

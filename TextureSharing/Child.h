@@ -21,6 +21,7 @@ private:
 	void InitColors(FLOAT aColors[][4]);
 	void InitTextures(bool aUseMutex);
 	void Clean();
+	void Swap();
 
 	DeviceManager* mDeviceManager;
 	ChildPipe* mPipe;
@@ -33,6 +34,11 @@ private:
 	FLOAT white[4];
 	FLOAT mColors[6][4];
 	// draw 4 textures
-	Texture* mTextures[mTextureCount];
+	Texture* mFrontBuffers[mTextureCount];
+	Texture* mBackBuffers[mTextureCount];
+
+	Texture** mCurrentTextures;
+
+
 	SyncTexture* mSyncTexture;
 };
