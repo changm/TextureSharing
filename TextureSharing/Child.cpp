@@ -138,7 +138,6 @@ Child::InitSyncTexture()
 	assert(mWidth);
 	assert(mHeight);
 
-	::DebugBreak();
 	mSyncTexture = SyncTexture::AllocateSyncTexture(mDeviceManager->GetDevice(), mDeviceManager->GetDeviceContext(), mWidth, mHeight);
 	HANDLE syncTexture = mSyncTexture->GetSharedHandle();
 
