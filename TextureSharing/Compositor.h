@@ -27,6 +27,7 @@ public:
 	void InitSyncTexture(HANDLE aSyncHandle);
 
 private:
+	void InitDrawQuery();
 	void InitViewport();
 	void CalculateDimensions();
 	void CopyToBackBuffer(Texture* aTexture);
@@ -34,6 +35,7 @@ private:
 	void InitBackBuffer();
 	void InitColors(FLOAT aColors[][4], int aCount);
 	void LockSyncHandle(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle);
+	void WaitForDrawExecution();
 	ID3D11Texture2D* GetTexture(HANDLE aHandle);
 
 	HWND mOutputWindow;
@@ -74,4 +76,6 @@ private:
 	ID3D11Texture2D* mSyncTexture;
 	std::map<HANDLE, ID3D11Texture2D*> mTextures;
 	HANDLE mMutex;
+
+	ID3D11Query* mDrawQuery;
 };

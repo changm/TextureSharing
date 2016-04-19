@@ -43,6 +43,7 @@ Compositor::Clean()
 	}
 	mTextures.clear();
 
+	mDrawQuery->Release();
 	mSyncTexture->Release();
 	mDevice->Release();
 	mContext->Release();
@@ -220,6 +221,7 @@ Compositor::PrepareDrawing()
 	SetInputLayout();
 	SetIndexBuffers();
 	InitVertexBuffers();
+	InitDrawQuery();
 	mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
@@ -357,8 +359,31 @@ Compositor::GetTexture(HANDLE aHandle)
 }
 
 void
+Compositor::InitDrawQuery()
+{
+	D3D11_QUERY_DESC queryDesc;
+	memset(&queryDesc, 0, sizeof(D3D11_QUERY_DESC));
+	queryDesc.Query = D3D11_QUERY_EVENT;
+
+	HRESULT hr = mDevice->CreateQuery(&queryDesc, &mDrawQuery);
+	assert(SUCCESS(hr));
+}
+
+void
+Compositor::WaitForDrawExecution()
+{
+	for (;;) {
+		HRESULT hr = mContext->GetData(mDrawQuery, NULL, 0, 0);
+		if (SUCCESS(hr)) {
+			return;
+		}
+	}
+}
+
+void
 Compositor::CompositeWithSync(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle)
 {
+	mContext->Begin(mDrawQuery);
 	LockSyncHandle(aHandles, aSyncHandle);
 
 	int handleCount = aHandles.size();
@@ -372,6 +397,14 @@ Compositor::CompositeWithSync(std::vector<HANDLE>& aHandles, HANDLE aSyncHandle)
 
 	mContext->Flush();
 	mSwapChain->Present(0, 0);
+	mContext->End(mDrawQuery);
+
+	// The draw calls above might not finish by the time we call present, so if we tell
+	// the child to draw now, the child could still draw to the texture before
+	// the compositor executes it's draw calls. This could happen since they are on 
+	// differnet ID3D11Devices and both are async, so we can't guarantee draw order either.
+	// I think?
+	WaitForDrawExecution();
 }
 
 void
